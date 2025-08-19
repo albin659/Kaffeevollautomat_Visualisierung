@@ -1,25 +1,30 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
+import {BrowserRouter, Route, Routes} from "react-router-dom";
+import Layout from "./_views/layout/Layout";
+import "bootstrap/dist/css/bootstrap.min.css";
+import Dashboard from "./_views/dashboard/Dashboard";
+import Preparation from "./_views/preparation/Preparation";
+import Analytics from "./_views/analytics/Analytics";
+import History from "./_views/history/History";
+import Report from "./_views/report/Report";
+import {useWebSocket} from "./common/hooks/useWebSocket";
 
 function App() {
+  //const { messages, sendMessage } = useWebSocket("");
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Layout/>}>
+            <Route path="/dashboard" element={<Dashboard/>}/>
+            <Route path="/preparation" element={<Preparation/>}/>
+            <Route path="/analytic" element={<Analytics/>}/>
+            <Route path="/history" element={<History/>}/>
+            <Route path="/report" element={<Report/>}/>
+          </Route>
+        </Routes>
+      </BrowserRouter>
   );
 }
 
