@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import logo from './logo.svg';
 import './App.css';
-import {useWebSocket} from "./hooks/useWebSocket";
+import {useWebSocket} from "./common/hooks/useWebSocket";
 
 function App() {
   const { messages, sendMessage } = useWebSocket("");
