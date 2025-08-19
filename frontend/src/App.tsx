@@ -11,7 +11,7 @@ import Report from "./_views/report/Report";
 import {useWebSocket} from "./common/hooks/useWebSocket";
 
 function App() {
-  const { messages, sendMessage } = useWebSocket("");
+  //const { messages, sendMessage } = useWebSocket("");
 
   return (
       <BrowserRouter>
