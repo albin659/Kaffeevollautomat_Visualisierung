@@ -1,4 +1,4 @@
-export interface Kaffee {
+export interface ICoffee {
     id: number;
     art: string;
     temperature: number;
