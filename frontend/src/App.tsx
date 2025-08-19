@@ -1,8 +1,11 @@
-import React from 'react';
+import React, {useState} from 'react';
 import logo from './logo.svg';
 import './App.css';
+import {useWebSocket} from "./hooks/useWebSocket";
 
 function App() {
+  const { messages, sendMessage } = useWebSocket("");
+
   return (
     <div className="App">
       <header className="App-header">
