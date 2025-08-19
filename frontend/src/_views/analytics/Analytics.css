@@ -1,0 +1,51 @@
+.outerDiv {
+  margin-left: 3vw;
+  margin-top: 1vh;
+}
+
+.innerDiv {
+  background-color: white;
+  border-radius: 10px;
+  margin-bottom: 1.5vh;
+}
+
+.heatDiv {
+    height: 500px;
+}
+
+.cornerText {
+  padding-left: 0.5vw;
+  padding-top: 0.5vh;
+}
+
+
+.chartStyle {
+  text-align: center;
+}
+
+.numbersText {
+    padding-left: 1vw;
+    font-size: 1.2em;
+    padding-bottom: 0.75vw;
+}
+
+ol {
+    counter-reset: item;
+    list-style: none;
+}
+
+ol li::before {
+    counter-increment: item;
+    content: counter(item) ". ";
+    margin-right: 0.5em;
+}
+
+.current-state {
+    background-color: #28bc04;
+    border-radius: 5px;
+    padding: 0.2em 0.6em;
+    display: inline-block; /* Text-breite Badge */
+}
+
+
+
