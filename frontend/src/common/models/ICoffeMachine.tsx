@@ -3,6 +3,6 @@ export interface ICoffeMachine {
     hasEnoughWater: boolean;
     binIsNotFull: boolean;
     temperature: number;
-    waterFlow: string;
+    waterFlow: number;
     currentState: string;
 }
