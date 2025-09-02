@@ -12,11 +12,11 @@ const MenuBar = () => {
 
             <div className="text-center mb-3">
                 <img
-                    src="/logo192.png"
+                    src="/logo_kaffeevollautomat.png"
                     alt="Logo"
                     onClick={() => navigate("/dashboard")}
                     className="img-fluid"
-                    style={{ maxWidth: "190px", height: "auto" }}
+                    style={{ maxWidth: "180px", height: "auto" }}
                 />
             </div>
 
