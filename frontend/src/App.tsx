@@ -8,24 +8,24 @@ import Preparation from "./_views/preparation/Preparation";
 import Analytics from "./_views/analytics/Analytics";
 import History from "./_views/history/History";
 import Report from "./_views/report/Report";
-import {useWebSocket} from "./common/hooks/useWebSocket";
+import { WebSocketProvider } from "./common/context/WebSocketContext";
 
 function App() {
-  //const { messages, sendMessage } = useWebSocket("");
-
-  return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Layout/>}>
-            <Route path="/dashboard" element={<Dashboard/>}/>
-            <Route path="/preparation" element={<Preparation/>}/>
-            <Route path="/analytic" element={<Analytics/>}/>
-            <Route path="/history" element={<History/>}/>
-            <Route path="/report" element={<Report/>}/>
-          </Route>
-        </Routes>
-      </BrowserRouter>
-  );
+    return (
+        <WebSocketProvider>
+            <BrowserRouter>
+                <Routes>
+                    <Route path="/" element={<Layout/>}>
+                        <Route path="/dashboard" element={<Dashboard/>}/>
+                        <Route path="/preparation" element={<Preparation/>}/>
+                        <Route path="/analytic" element={<Analytics/>}/>
+                        <Route path="/history" element={<History/>}/>
+                        <Route path="/report" element={<Report/>}/>
+                    </Route>
+                </Routes>
+            </BrowserRouter>
+        </WebSocketProvider>
+    );
 }
 
 export default App;
