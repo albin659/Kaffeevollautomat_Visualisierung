@@ -1,44 +1,43 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import './Menubar.css';
 
 const MenuBar = () => {
-
     const navigate = useNavigate();
     const location = useLocation();
 
-    return (
-        <div className="bg-white text-dark vh-100 p-3 shadow d-flex flex-column align-items-center"
-             style={{ width: "250px", position: "fixed", left: 0, top: 0 }}>
+    const isActive = (path: string) => location.pathname === path ? "active-link" : "";
 
-            <div className="text-center mb-3">
+    return (
+        <div className="menu-bar d-flex flex-column align-items-center bg-white vh-100 shadow">
+            {/* Logo */}
+            <div className="text-center mb-4">
                 <img
-                    src="/logo_kaffeevollautomat.png"
+                    src="/kaffeemaschine_logo.png"
                     alt="Logo"
                     onClick={() => navigate("/dashboard")}
-                    className="img-fluid"
-                    style={{ maxWidth: "180px", height: "auto" }}
+                    className="img-fluid logo"
                 />
+                <div className="logo-text">Kaffeevollautomaten Visualisierung</div>
+                <div className="logo-separator"></div>
             </div>
 
-            <ul className="nav flex-column w-100 text-center flex-grow-1">
+            {/* Navigation */}
+            <ul className="nav flex-column w-100">
                 <li className="nav-item">
-                    <Link className={`nav-link text-dark fs-5 ${location.pathname === "/dashboard" ? "fw-bold" : ""}`} to="/dashboard">
-                        Dashboard
-                    </Link>
-                    <Link className={`nav-link text-dark fs-5 ${location.pathname === "/preparation" ? "fw-bold" : ""}`} to="/preparation">
-                        Preparation
-                    </Link>
-                    <Link className={`nav-link text-dark fs-5 ${location.pathname === "/analytic" ? "fw-bold" : ""}`} to="/analytic">
-                        Analytics
-                    </Link>
-                    <Link className={`nav-link text-dark fs-5 ${location.pathname === "/history" ? "fw-bold" : ""}`} to="/history">
-                        History
-                    </Link>
-                    <Link className={`nav-link text-dark fs-5 ${location.pathname === "/report" ? "fw-bold" : ""}`} to="/report">
-                        Report
-                    </Link>
+                    <Link className={`nav-link ${isActive("/dashboard")}`} to="/dashboard">Dashboard</Link>
+                    <Link className={`nav-link ${isActive("/preparation")}`} to="/preparation">Preparation</Link>
+                    <Link className={`nav-link ${isActive("/analytic")}`} to="/analytic">Analytics</Link>
+                    <Link className={`nav-link ${isActive("/history")}`} to="/history">History</Link>
+                    <Link className={`nav-link ${isActive("/report")}`} to="/report">Report</Link>
                 </li>
             </ul>
+
+            {/* Footer */}
+            <div className="mt-auto text-center small text-muted mb-3">
+                <div className="footer-separator"></div>
+                Diplomarbeit 2025<br/>Sensor Monitoring
+            </div>
         </div>
     );
 };

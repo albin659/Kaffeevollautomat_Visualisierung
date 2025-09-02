@@ -1,0 +1,46 @@
+.menu-bar {
+    width: 250px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    padding: 1rem;
+}
+
+.menu-bar .logo {
+    max-width: 120px; /* kleineres Logo */
+    cursor: pointer;
+}
+
+.menu-bar .logo-text {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-top: 0.25rem;
+    color: #333;
+}
+
+.menu-bar .logo-separator,
+.menu-bar .footer-separator {
+    width: 100%;           /* volle Breite */
+    height: 1px;
+    background-color: #ccc;
+    margin: 0.75rem 0;     /* nur oben/unten Abstand, kein auto */
+}
+
+.menu-bar .nav-link {
+    color: #333;
+    padding: 0.75rem 1rem;
+    border-radius: 0.375rem;
+    margin-bottom: 0.25rem;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.menu-bar .nav-link:hover {
+    background-color: #f0f0f0;
+    color: #000;
+    text-decoration: none;
+}
+
+.menu-bar .nav-link.active-link {
+    background-color: #162a4f;
+    color: white;
+}
