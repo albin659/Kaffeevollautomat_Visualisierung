@@ -47,5 +47,23 @@ ol li::before {
     display: inline-block; /* Text-breite Badge */
 }
 
+.waterAndCoffeeStatus {
+    border-radius: 10px;
+    margin-bottom: 1.5vh;
+}
 
+.backgroundGreen {
+    background-color: #28bc04;
+}
 
+.backgroundRed {
+    background-color: red;
+}
+
+.centerText {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 8vh;
+
+}

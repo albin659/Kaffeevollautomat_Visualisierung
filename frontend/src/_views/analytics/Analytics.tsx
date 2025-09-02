@@ -13,6 +13,9 @@ const Analytics = () => {
         createdDate: "19.08.2025"
     };
 
+    const [waterLevelIsGood, setWaterLevelIsGood] = useState(true);
+    const [coffeeGroundsContainerEmpty, setCoffeeGroundsContainerEmpty] = useState(true);
+
     const demoMachine: ICoffeMachine = {
         isOn: true,
         hasEnoughWater: true,
@@ -72,11 +75,11 @@ const Analytics = () => {
 
                 <ResponsiveContainer width="80%" height={200}>
                     <LineChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis domain={[0, 1]} />
-                        <Tooltip />
-                        <Line type="monotone" dataKey="value" stroke="#8884d8" dot={false} />
+                        <CartesianGrid strokeDasharray="3 3"/>
+                        <XAxis dataKey="name"/>
+                        <YAxis domain={[0, 1]}/>
+                        <Tooltip/>
+                        <Line type="monotone" dataKey="value" stroke="#8884d8" dot={false}/>
                     </LineChart>
                 </ResponsiveContainer>
 
@@ -115,6 +118,19 @@ const Analytics = () => {
 
                 <p className="numbersText">{demoCoffee.type}</p>
             </div>
+
+            <div className={`waterAndCoffeeStatus ${waterLevelIsGood ? "backgroundGreen" : "backgroundRed"}`}>
+                <p className="numbersText centerText">
+                    {waterLevelIsGood ? "Genug Wasser vorhanden" : "Bitte Wasser nachfüllen"}
+                </p>
+            </div>
+
+            <div className={`waterAndCoffeeStatus ${coffeeGroundsContainerEmpty ? "backgroundGreen" : "backgroundRed"}`}>
+                <p className="numbersText centerText">
+                    {coffeeGroundsContainerEmpty ? "Kaffee sub ist nicht voll" : "Bitte Kaffeesatzbehälter leeren"}
+                </p>
+            </div>
+
         </div>
     );
 };

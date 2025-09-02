@@ -36,3 +36,51 @@
     transform: rotate(360deg);
   }
 }
+
+body {
+  background-color: #1E1E1E;
+  color: #ECEFF1;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.sidebar {
+  background-color: #2C2C2C;
+  color: #ECEFF1;
+}
+
+.sidebar a {
+  color: #B0BEC5;
+  text-decoration: none;
+  padding: 10px;
+  display: block;
+  transition: 0.3s;
+}
+
+.sidebar a:hover {
+  background-color: #3E2723; /* sehr dunkles Coffee-Braun */
+  color: #FFD700; /* Gold */
+}
+
+.card {
+  background-color: #2C2C2C;
+  color: #ECEFF1;
+  border: none;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+}
+
+button {
+  background-color: #B87333; /* Kupfer */
+  border: none;
+  color: #ECEFF1;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  background-color: #FFD700; /* Gold */
+  color: #1E1E1E;
+}
