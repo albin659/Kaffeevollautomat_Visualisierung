@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import {ICoffee} from "../../common/models/ICoffee";
 
 const Preparation = () => {
     const [coffeeType, setCoffeeType] = useState<string>("Espresso");
@@ -7,6 +6,7 @@ const Preparation = () => {
     const [strength, setStrength] = useState<number>(3);
     const [messages, setMessages] = useState<string[]>([]);
     const [machineReady, setMachineReady] = useState<boolean>(false);
+    const [isBrewing, setIsBrewing] = useState<boolean>(false);
 
     const ws = useRef<WebSocket | null>(null);
 
@@ -16,7 +16,6 @@ const Preparation = () => {
 
         ws.current.onopen = () => {
             setMessages((prev) => [...prev, "✅ Verbunden mit Kaffeemaschine"]);
-            // Maschine einschalten (1 = aufheizen)
             ws.current?.send("1");
         };
 
@@ -27,11 +26,20 @@ const Preparation = () => {
             if (msg.includes("Maschine ist betriebsbereit")) {
                 setMachineReady(true);
             }
+
+            // Wenn die Zubereitung abgebrochen wird, isBrewing zurücksetzen
+            if (msg.includes("Kaffeezubereitung abgebrochen") ||
+                msg.includes("Kaffee ist fertig") ||
+                msg.includes("Kaffeesatzbehälter voll") ||
+                msg.includes("Nicht genug Wasser")) {
+                setIsBrewing(false);
+            }
         };
 
         ws.current.onclose = () => {
             setMessages((prev) => [...prev, "❌ Verbindung geschlossen"]);
             setMachineReady(false);
+            setIsBrewing(false);
         };
 
         return () => {
@@ -39,26 +47,56 @@ const Preparation = () => {
         };
     }, []);
 
-    // Kaffee bestellen
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        const newCoffee: ICoffee = {
-            id: Date.now(),
-            type: coffeeType,
-            strength: strength,
-            createdDate: new Date().toISOString(),
-        };
+        if (!machineReady || isBrewing) return;
+
+        setIsBrewing(true);
 
         if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-            ws.current.send("2"); // Kaffee-Auswahl-Modus
-            ws.current.send(coffeeType === "Espresso" ? "2" : "1"); // Typ senden
+            // Sende zuerst die Anzahl, dann den Kaffeetyp
+            ws.current.send("2");
+            setTimeout(() => {
+                ws.current?.send(amount.toString()); // Anzahl senden
+            }, 50);
+            setTimeout(() => {
+                ws.current?.send(coffeeType === "Espresso" ? "2" : "1"); // Typ senden
+            }, 100);
         }
 
         setMessages((prev) => [
             ...prev,
             `☕ Bestellung: ${amount}x ${coffeeType} (Stärke ${strength})`,
         ]);
+
+        const onMessage = (event: MessageEvent) => {
+            const msg = event.data;
+            // Setze isBrewing auf false bei Fertigstellung oder Abbruch
+            if (msg.includes("Kaffee ist fertig!") ||
+                msg.includes("Kaffeezubereitung abgebrochen") ||
+                msg.includes("Kaffeesatzbehälter voll") ||
+                msg.includes("Nicht genug Wasser")) {
+                setIsBrewing(false);
+                ws.current?.removeEventListener("message", onMessage);
+            }
+        };
+
+        ws.current?.addEventListener("message", onMessage);
+    };
+
+    const handleFillWater = () => {
+        if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+            ws.current.send("3");
+            setMessages((prev) => [...prev, "💧 Wassertank wird befüllt..."]);
+        }
+    };
+
+    const handleEmptyGrounds = () => {
+        if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+            ws.current.send("4");
+            setMessages((prev) => [...prev, "🗑️ Kaffeesatz wird geleert..."]);
+        }
     };
 
     return (
@@ -131,15 +169,35 @@ const Preparation = () => {
                             <div>Stärke: {strength}</div>
                         </div>
 
-                        {/* Button */}
                         <button
                             type="submit"
                             className="btn btn-success w-100"
-                            disabled={!machineReady}
+                            disabled={!machineReady || isBrewing}
                         >
-                            {machineReady ? "Zubereiten" : "Maschine heizt auf..."}
+                            {machineReady ? (isBrewing ? "Bereitet zu..." : "Zubereiten") : "Maschine heizt auf..."}
                         </button>
                     </form>
+
+                    {/* Die Buttons für Wasser und Kaffeesatz außerhalb des Formulars */}
+                    <div className="d-flex gap-2 mb-3 mt-3">
+                        <button
+                            type="button"
+                            className="btn btn-primary flex-grow-1"
+                            disabled={isBrewing} // Nur während des Brühens deaktivieren
+                            onClick={handleFillWater}
+                        >
+                            Wassertank befüllen
+                        </button>
+
+                        <button
+                            type="button"
+                            className="btn btn-warning flex-grow-1"
+                            disabled={isBrewing} // Nur während des Brühens deaktivieren
+                            onClick={handleEmptyGrounds}
+                        >
+                            Kaffeesatz leeren
+                        </button>
+                    </div>
                 </div>
             </div>
 
