@@ -1,25 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function useWebSocket(url: string) {
     const [messages, setMessages] = useState<string[]>([]);
-    const [socket, setSocket] = useState<WebSocket | null>(null);
+    const socketRef = useRef<WebSocket | null>(null);
 
     useEffect(() => {
         const ws = new WebSocket(url);
-        setSocket(ws);
+        socketRef.current = ws;
 
-        ws.onopen = () => {
-            console.log("WebSocket connected");
-        };
-
+        ws.onopen = () => console.log("WebSocket connected");
         ws.onmessage = (event) => {
-            console.log("Message from server:", event.data);
-            setMessages((prev) => [...prev, event.data]);
+            console.log("WS message in Hook:", event.data); // <-- hier prüfen
+            setMessages(prev => [...prev, event.data]);
         };
-
-        ws.onclose = () => {
-            console.log("WebSocket disconnected");
-        };
+        ws.onclose = () => console.log("WebSocket disconnected");
 
         return () => {
             ws.close();
@@ -27,8 +21,10 @@ export function useWebSocket(url: string) {
     }, [url]);
 
     const sendMessage = (msg: string) => {
-        if (socket && socket.readyState === WebSocket.OPEN) {
-            socket.send(msg);
+        if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+            socketRef.current.send(msg);
+        } else {
+            console.log("WebSocket not open yet");
         }
     };
 

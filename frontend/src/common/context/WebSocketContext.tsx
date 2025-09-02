@@ -8,7 +8,8 @@ type WebSocketContextType = {
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
 
-export function WebSocketProvider({ children }: { children: React.ReactNode }) {
+export const WebSocketProvider = ({ children }: { children: React.ReactNode }) => {
+    // Hier nutzen wir unseren Hook einmal für die gesamte App
     const { messages, sendMessage } = useWebSocket("ws://localhost:8765");
 
     return (
@@ -16,12 +17,10 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
             {children}
         </WebSocketContext.Provider>
     );
-}
+};
 
-export function useWS() {
+export const useWS = () => {
     const ctx = useContext(WebSocketContext);
-    if (!ctx) {
-        throw new Error("useWS must be used inside a WebSocketProvider");
-    }
+    if (!ctx) throw new Error("useWS must be used inside a WebSocketProvider");
     return ctx;
-}
+};
