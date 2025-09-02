@@ -3,9 +3,13 @@ import './Analytics.css';
 import {ICoffee} from "../../common/models/ICoffee";
 import {ICoffeMachine} from "../../common/models/ICoffeMachine";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useCoffeeMachine } from "../../common/client/WSClient";
 
 
 const Analytics = () => {
+
+    const { messages, machineReady, send } = useCoffeeMachine();
+
     const demoCoffee: ICoffee = {
         id: 1,
         type: 'Espresso',
@@ -125,10 +129,21 @@ const Analytics = () => {
                 </p>
             </div>
 
-            <div className={`waterAndCoffeeStatus ${coffeeGroundsContainerEmpty ? "backgroundGreen" : "backgroundRed"}`}>
+            <div
+                className={`waterAndCoffeeStatus ${coffeeGroundsContainerEmpty ? "backgroundGreen" : "backgroundRed"}`}>
                 <p className="numbersText centerText">
                     {coffeeGroundsContainerEmpty ? "Kaffee sub ist nicht voll" : "Bitte Kaffeesatzbehälter leeren"}
                 </p>
+            </div>
+
+            <div>
+                <h2>Status</h2>
+                {messages.map((m, i) => (
+                    <div key={i}>{m}</div>
+                ))}
+                <button disabled={!machineReady} onClick={() => send("2")}>
+                    Zubereiten
+                </button>
             </div>
 
         </div>
