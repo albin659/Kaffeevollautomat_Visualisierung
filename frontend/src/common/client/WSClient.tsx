@@ -28,9 +28,8 @@ class WsClient {
 
 export const wsClient = new WsClient();
 
-// -----------------------------
-// React Hook für deine Komponenten
-// -----------------------------
+// React Hook
+
 export function useCoffeeMachine() {
     const [messages, setMessages] = useState<string[]>([]);
     const [machineReady, setMachineReady] = useState(false);
@@ -45,11 +44,11 @@ export function useCoffeeMachine() {
                 }
             },
             () => {
-                setMessages((prev) => [...prev, "✅ Verbunden mit Kaffeemaschine"]);
+                setMessages((prev) => [...prev, " Verbunden mit Kaffeemaschine"]);
                 wsClient.send("1");
             },
             () => {
-                setMessages((prev) => [...prev, "❌ Verbindung geschlossen"]);
+                setMessages((prev) => [...prev, " Verbindung geschlossen"]);
                 setMachineReady(false);
             }
         );

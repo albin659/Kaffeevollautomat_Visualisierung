@@ -15,7 +15,7 @@ const Preparation = () => {
         ws.current = new WebSocket("ws://localhost:8765");
 
         ws.current.onopen = () => {
-            setMessages((prev) => [...prev, "✅ Verbunden mit Kaffeemaschine"]);
+            setMessages((prev) => [...prev, " Verbunden mit Kaffeemaschine"]);
             ws.current?.send("1");
         };
 
@@ -37,7 +37,7 @@ const Preparation = () => {
         };
 
         ws.current.onclose = () => {
-            setMessages((prev) => [...prev, "❌ Verbindung geschlossen"]);
+            setMessages((prev) => [...prev, " Verbindung geschlossen"]);
             setMachineReady(false);
             setIsBrewing(false);
         };
