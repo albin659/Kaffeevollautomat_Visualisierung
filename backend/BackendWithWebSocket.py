@@ -12,12 +12,10 @@ class MachineState:
         self.water_flow = 0
         self.powered_on = True
 
-    def __repr__(self):
-        water_status = "OK" if self.water_ok else "Leer"
-        grounds_status = "OK" if self.grounds_ok else "Voll"
-        return (f"Temp: {self.temp}°C, Wasser: {water_status}, "
-                f"Kaffeesatz: {grounds_status}, Wasserdurchfluss: {self.water_flow}ml/s, "
-                f"Datum: {date.today().strftime('%d.%m.%Y')}")
+    def to_csv(self):
+        water_flag = 1 if self.water_ok else 0
+        grounds_flag = 1 if self.grounds_ok else 0
+        return f"{self.temp},{water_flag},{grounds_flag},{self.water_flow},{date.today().strftime('%d.%m.%Y')}"
 
 class Step:
     def __init__(self, second: int, description: str):
@@ -25,7 +23,7 @@ class Step:
         self.description = description
 
     async def execute(self, state: MachineState, send):
-        await send(f"{self.description} | {state}")
+        await send(f"{self.description},{state.to_csv()}")
         await asyncio.sleep(1)
 
 class HeatUp(Step):
@@ -65,10 +63,10 @@ class CoffeeBrewing(Step):
     
     async def execute(self, state: MachineState, send):
         if not state.water_ok:
-            await send(">>> Nicht genug Wasser für den Kaffee! Bitte Wasser nachfüllen.")
+            await send(f"Wasser leer,{state.to_csv()}")
             return False
         if not state.grounds_ok:
-            await send(">>> Kaffeesatzbehälter voll! Bitte leeren.")
+            await send(f"Kaffeesatz voll,{state.to_csv()}")
             return False
 
         state.water_flow = 5
@@ -78,7 +76,7 @@ class CoffeeBrewing(Step):
         if state.cups_since_filled + self.amount >= 5:
             state.water_ok = False
 
-        await send(f"{self.description} | {state}")
+        await send(f"{self.description},{state.to_csv()}")
         await asyncio.sleep(1)
         state.water_flow = 0
         return True
@@ -93,17 +91,15 @@ coffee_types = {
 state = MachineState()
 
 async def wait_for_input_with_timeout(websocket, send, timeout=1):
-    """Wartet auf Eingabe, sendet den aktuellen Status nach jedem Timeout"""
     countdown_started = False
-    countdown_seconds = 120  # 2 Minuten = 120 Sekunden
+    countdown_seconds = 120
     remaining_time = countdown_seconds
     
     while True:
         try:
             if countdown_started:
-                # Verwende kürzeren Timeout für Countdown-Anzeige
                 message = await asyncio.wait_for(websocket.recv(), timeout=1)
-                countdown_started = False  # Reset Countdown wenn Eingabe kommt
+                countdown_started = False
                 return message
             else:
                 message = await asyncio.wait_for(websocket.recv(), timeout=timeout)
@@ -111,91 +107,84 @@ async def wait_for_input_with_timeout(websocket, send, timeout=1):
                 
         except asyncio.TimeoutError:
             if not countdown_started:
-                # Starte Countdown nach erstem Timeout
                 countdown_started = True
                 remaining_time = countdown_seconds
-                await send(f"Warten: {state}")
+                await send(f"Warten,{state.to_csv()}")
             else:
                 remaining_time -= 1
                 if remaining_time > 0:
-                    await send(f"Warten: {state}")
+                    await send(f"Warten,{state.to_csv()}")
                 else:
-                    await send(">>> Timeout: Keine Eingabe erhalten. Maschine schaltet sich aus")
+                    await send(f"Timeout,{state.to_csv()}")
                     return "timeout"
 
-async def cool_down_machine(send):
-    """Lässt die Maschine über 180 Sekunden auf 22°C abkühlen"""
-    await send(">>> Maschine kühlt ab...")
+async def heat_up_machine(send):
+    start_temp = state.temp
+    target_temp = 94
+    total_seconds = 45
+    temp_difference = target_temp - start_temp
     
-    # Erstelle eine gleichmäßige Abkühlkurve von aktueller Temperatur auf 22°C über 180 Sekunden
+    for second in range(total_seconds):
+        current_temp = start_temp + (temp_difference * (second / total_seconds))
+        state.temp = round(current_temp, 1)
+        
+        state.water_flow = 5 if 31 <= second <= 45 else 0
+        
+        await send(f"Aufheizen,{state.to_csv()}")
+        await asyncio.sleep(1)
+    
+    state.water_flow = 0
+
+async def cool_down_machine(send):
     start_temp = state.temp
     target_temp = 22
     total_seconds = 180
     temp_difference = start_temp - target_temp
     
-    # Berechne die Temperatur für jede Sekunde
     for second in range(total_seconds):
-        # Lineare Abkühlung
         current_temp = start_temp - (temp_difference * (second / total_seconds))
         state.temp = round(current_temp, 1)
-        await send(f"Abkühlen | {state}")
+        await send(f"Abkühlen,{state.to_csv()}")
         await asyncio.sleep(1)
     
     state.powered_on = False
-    await send(">>> Maschine vollständig abgekühlt und ausgeschaltet")
+    await send(f"Ausgeschaltet,{state.to_csv()}")
 
 async def handle_command(option, send):
     if option == "1":
         if not state.powered_on:
             state.powered_on = True
-            await send(">>> Maschine wird eingeschaltet...")
             await asyncio.sleep(2)
         
-        await send(">>> Maschine heizt auf...")
-        heatingUp = [HeatUp(sec, temp) for sec, temp in enumerate([
-            22, 27, 31, 34, 37, 40, 43, 45, 47, 49,
-            50, 52, 54, 56, 58, 60, 62, 64, 66, 68,
-            70, 72, 74, 76, 78, 80, 82, 84, 86, 87,
-            88, 89, 90, 90, 91, 91, 92, 92, 92, 92,
-            92, 93, 93, 93, 93, 93, 93, 93, 93, 93,
-            94, 94, 94, 94, 94
-        ])]
-        for step in heatingUp:
-            await step.execute(state, send)
-        await send(">>> Maschine ist betriebsbereit!")
+        await heat_up_machine(send)
         return "ready"
 
     elif option == "2":
         if not state.powered_on:
-            await send(">>> Maschine ist ausgeschaltet! Bitte erst einschalten (Option 1).")
             return "ready"
         return "await_amount"
 
     elif option == "3":
         if not state.powered_on:
-            await send(">>> Maschine ist ausgeschaltet! Bitte erst einschalten (Option 1).")
             return "ready"
         state.water_ok = True
         state.cups_since_filled = 0
-        await send(">>> Wassertank aufgefüllt.")
+        await send(f"Wasser aufgefüllt,{state.to_csv()}")
         return "ready"
 
     elif option == "4":
         if not state.powered_on:
-            await send(">>> Maschine ist ausgeschaltet! Bitte erst einschalten (Option 1).")
             return "ready"
         state.grounds_ok = True
         state.cups_since_empty = 0
-        await send(">>> Kaffeesatzbehälter geleert.")
+        await send(f"Kaffeesatz geleert,{state.to_csv()}")
         return "ready"
 
     elif option == "5":
-        await send(">>> Maschine wird ausgeschaltet...")
         await cool_down_machine(send)
         return "ready"
 
     else:
-        await send("Ungültige Eingabe!")
         return "ready"
 
 async def echo(websocket):
@@ -224,21 +213,17 @@ async def echo(websocket):
                     current_amount = int(message)
                     current_state = "await_coffee_choice"
                 else:
-                    await send("Ungültige Anzahl! Bitte 1 oder 2 eingeben.")
                     current_state = "ready"
                 continue
 
             if current_state == "await_coffee_choice":
                 if message in coffee_types:
                     if not state.powered_on:
-                        await send(">>> Maschine ist ausgeschaltet! Bitte erst einschalten (Option 1).")
                         current_state = "ready"
                         continue
                         
                     recipe = coffee_types[message]
 
-                    await send(f">>> Starte {recipe['name']} ({current_amount}x)...")
-                    
                     grinding = [CoffeeGrind(i+1, "Mahlen") for i in range(recipe['grinding_steps'])]
                     press = [CoffeePress(i+1, "Pressen") for i in range(recipe['press_steps'])]
                     moisting = [PowderMoister(i+1, "Anfeuchten") for i in range(recipe['moisting_steps'])]
@@ -251,11 +236,9 @@ async def echo(websocket):
                         await step.execute(state, send)
                     
                     if not state.water_ok:
-                        await send(">>> Nicht genug Wasser für den Kaffee! Bitte Wasser nachfüllen.")
                         current_state = "ready"
                         continue
                     if not state.grounds_ok:
-                        await send(">>> Kaffeesatzbehälter voll! Bitte leeren.")
                         current_state = "ready"
                         continue
                     
@@ -275,15 +258,6 @@ async def echo(websocket):
                         
                         state.cups_since_empty += current_amount
                         state.cups_since_filled += current_amount
-                        
-                        if not state.water_ok:
-                            await send(">>> WARNUNG: Wassertank ist jetzt leer! Bitte nachfüllen.")
-                        if not state.grounds_ok:
-                            await send(">>> WARNUNG: Kaffeesatzbehälter ist jetzt voll! Bitte leeren.")
-                        
-                        await send(">>> Kaffee ist fertig!")
-                    else:
-                        await send(">>> Kaffeezubereitung abgebrochen!")
                     
                     current_state = "ready"
                         
