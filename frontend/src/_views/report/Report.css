@@ -1,0 +1,10 @@
+.report-button {
+    background-color: #162a4f !important; /* gleiche Farbe für beide Buttons */
+    border-color: #162a4f !important;
+    color: white !important;
+}
+
+.report-button:hover {
+    background-color: #162a4f !important;
+    border-color: #162a4f !important;
+}
