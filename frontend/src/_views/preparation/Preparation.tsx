@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import './Preperation.css';
 
 const Preparation = () => {
     const [coffeeType, setCoffeeType] = useState<string>("Espresso");
@@ -101,7 +102,7 @@ const Preparation = () => {
 
     return (
         <div className="container mt-4">
-            <div className="card shadow">
+            <div className="card">
                 <div className="card-body">
                     <h4 className="card-title mb-3">Zubereitung</h4>
                     <form onSubmit={handleSubmit}>

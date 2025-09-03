@@ -19,7 +19,7 @@ const History = () => {
         { time: "08:00", temperature: "82°C", strength: 0.5, type: "Espresso" },
         { time: "09:15", temperature: "85°C", strength: 0.7, type: "Schwarz" },
     ]);
-    
+
     return (
         <div className="history-container">
             <h2>History</h2>
@@ -53,6 +53,8 @@ const History = () => {
                 <p>Heute gebrüht: {coffeeCount} Tassen</p>
                 <p>Beliebtestes Sortiment: {mostPopularCoffee}</p>
             </div>
+
+
         </div>
     );
 };

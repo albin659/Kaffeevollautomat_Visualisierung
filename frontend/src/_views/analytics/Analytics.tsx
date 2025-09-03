@@ -5,9 +5,7 @@ import {ICoffeMachine} from "../../common/models/ICoffeMachine";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useCoffeeMachine } from "../../common/client/WSClient";
 
-
 const Analytics = () => {
-
     const { messages, machineReady, send } = useCoffeeMachine();
 
     const demoCoffee: ICoffee = {
@@ -57,9 +55,9 @@ const Analytics = () => {
             setSeconds(counter);
 
             setChartData(prev => {
-                const tempValue = tempArray[(counter - 1) % tempArray.length]; // zyklisch aus tempArray
+                const tempValue = tempArray[(counter - 1) % tempArray.length];
                 const newData = [...prev, { name: `Sek ${counter}`, value: tempValue }];
-                if (newData.length > 10) newData.shift(); // nur die letzten 10 Einträge
+                if (newData.length > 10) newData.shift();
                 return newData;
             });
         }, 1000);
@@ -67,28 +65,25 @@ const Analytics = () => {
         return () => clearInterval(interval);
     }, []);
 
-
-
-
     return (
         <div className="outerDiv">
             <h1>Analytics</h1>
 
             <div className="innerDiv heatDiv">
                 <p className="cornerText">Hitze</p>
-
-                <ResponsiveContainer width="80%" height={200}>
-                    <LineChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3"/>
-                        <XAxis dataKey="name"/>
-                        <YAxis domain={[0, 1]}/>
-                        <Tooltip/>
-                        <Line type="monotone" dataKey="value" stroke="#8884d8" dot={false}/>
-                    </LineChart>
-                </ResponsiveContainer>
-
-
+                <div className="chartWrapper">
+                    <ResponsiveContainer width="90%" height="80%">
+                        <LineChart data={chartData}>
+                            <CartesianGrid strokeDasharray="3 3"/>
+                            <XAxis dataKey="name"/>
+                            <YAxis/>
+                            <Tooltip/>
+                            <Line type="monotone" dataKey="value" stroke="#8884d8" dot={false}/>
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
             </div>
+
 
             <div className="innerDiv">
                 <p className="cornerText">Stärke</p>
