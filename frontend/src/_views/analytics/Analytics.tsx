@@ -1,74 +1,61 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import './Analytics.css';
-import {ICoffee} from "../../common/models/ICoffee";
-import {ICoffeMachine} from "../../common/models/ICoffeMachine";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useCoffeeMachine } from "../../common/client/WSClient";
 
 const Analytics = () => {
     const { messages, machineReady, send } = useCoffeeMachine();
 
-    const demoCoffee: ICoffee = {
-        id: 1,
-        type: 'Espresso',
-        strength: 5,
-        createdDate: "19.08.2025"
-    };
-
-    const [waterLevelIsGood, setWaterLevelIsGood] = useState(true);
-    const [coffeeGroundsContainerEmpty, setCoffeeGroundsContainerEmpty] = useState(true);
-
-    const demoMachine: ICoffeMachine = {
-        isOn: true,
-        hasEnoughWater: true,
-        binIsNotFull: true,
-        temperature: 90,
-        waterFlow: 12.1,
-        currentState: 'Kaffeebohnen malen'
-    };
-
-    const tempArray: number[] = [
-        7, 24, 28, 45, 66, 78, 80, 99, 101, 110, 119, 125
-    ];
-
-    const allStates:String[] = [
-        "Wasser erhitzen",
-        "Kaffeebohnen malen",
-        "Kaffeebohnen pressen",
-        "Kaffeepulver anfeuchten",
-        "Brühen",
-        "Kaffee fertig",
-    ];
-
-    const [seconds, setSeconds] = useState(0);
+    const [temperature, setTemperature] = useState<number>(0);
+    const [waterLevelIsGood, setWaterLevelIsGood] = useState<boolean>(true);
+    const [coffeeGroundsContainerEmpty, setCoffeeGroundsContainerEmpty] = useState<boolean>(true);
+    const [waterFlow, setWaterFlow] = useState<number>(0);
+    const [currentState, setCurrentState] = useState<string>("Warten");
     const [chartData, setChartData] = useState<{ name: string, value: number }[]>([]);
 
-    useEffect(() => {
-        let counter = 0; // zählt die echten Sekunden
-        const interval = setInterval(() => {
-            if (counter >= 12) {
-                clearInterval(interval);
-                return;
-            }
-            counter++;
+    const secondsCounter = useRef(0);
 
-            setSeconds(counter);
+    useEffect(() => {
+        if (messages.length === 0) return;
+
+        const latest = messages[messages.length - 1];
+        const parts = latest.split(",");
+
+        if (parts.length >= 6) {
+            const [zustand, temp, wasser, kaffeesatz, durchfluss] = parts;
+
+            setCurrentState(zustand.trim());
+            setTemperature(Number(temp));
+            setWaterLevelIsGood(wasser.trim() === "1");
+            setCoffeeGroundsContainerEmpty(kaffeesatz.trim() === "1");
+            setWaterFlow(Number(durchfluss));
+
+            secondsCounter.current += 1;
+            const secondLabel = `Sek ${secondsCounter.current}`;
 
             setChartData(prev => {
-                const tempValue = tempArray[(counter - 1) % tempArray.length];
-                const newData = [...prev, { name: `Sek ${counter}`, value: tempValue }];
-                if (newData.length > 10) newData.shift();
+                const newData = [...prev, { name: secondLabel, value: Number(temp) }];
+                if (newData.length > 20) newData.shift();
                 return newData;
             });
-        }, 1000);
+        }
+    }, [messages]);
 
-        return () => clearInterval(interval);
-    }, []);
+    const allStates = [
+        "Aufheizen",
+        "Mahlen",
+        "Pressen",
+        "Anfeuchten",
+        "Brühen",
+        "Warten",
+        "Abkühlen"
+    ];
 
     return (
         <div className="outerDiv">
             <h1>Analytics</h1>
 
+            {/* Temperatur */}
             <div className="innerDiv heatDiv">
                 <p className="cornerText">Hitze</p>
                 <div className="chartWrapper">
@@ -84,27 +71,24 @@ const Analytics = () => {
                 </div>
             </div>
 
-
-            <div className="innerDiv">
-                <p className="cornerText">Stärke</p>
-
-                <p className="numbersText">{demoCoffee.strength}</p>
+            <div className="innerDiv"><p className="cornerText">Stärke</p> <p
+                className="numbersText">Drücke einen Kaffee</p>
             </div>
 
+            {/* Wasserdurchfluss */}
             <div className="innerDiv">
                 <p className="cornerText">Wasserdurchfluss</p>
-
-                <p className="numbersText">{demoMachine.waterFlow} mL/s</p>
+                <p className="numbersText">{waterFlow} mL/s</p>
             </div>
 
+            {/* Zustand */}
             <div className="innerDiv">
                 <p className="cornerText">Aktueller Zustand</p>
-
                 <ol className="numbersText">
                     {allStates.map((state, idx) => (
                         <li
                             key={idx}
-                            className={state === demoMachine.currentState ? "current-state" : ""}
+                            className={state === currentState ? "current-state" : ""}
                         >
                             {state}
                         </li>
@@ -112,35 +96,28 @@ const Analytics = () => {
                 </ol>
             </div>
 
-            <div className="innerDiv">
-                <p className="cornerText">Kaffeetyp</p>
-
-                <p className="numbersText">{demoCoffee.type}</p>
-            </div>
-
+            {/* Wasser */}
             <div className={`waterAndCoffeeStatus ${waterLevelIsGood ? "backgroundGreen" : "backgroundRed"}`}>
                 <p className="numbersText centerText">
                     {waterLevelIsGood ? "Genug Wasser vorhanden" : "Bitte Wasser nachfüllen"}
                 </p>
             </div>
 
+            {/* Kaffeesatz */}
             <div
                 className={`waterAndCoffeeStatus ${coffeeGroundsContainerEmpty ? "backgroundGreen" : "backgroundRed"}`}>
                 <p className="numbersText centerText">
-                    {coffeeGroundsContainerEmpty ? "Kaffee sub ist nicht voll" : "Bitte Kaffeesatzbehälter leeren"}
+                    {coffeeGroundsContainerEmpty ? "Kaffeesatzbehälter frei" : "Bitte Kaffeesatzbehälter leeren"}
                 </p>
             </div>
 
+            {/* Debug */}
             <div>
                 <h2>Status</h2>
-                {messages.map((m, i) => (
+                {messages.slice(-5).map((m, i) => (
                     <div key={i}>{m}</div>
                 ))}
-                <button disabled={!machineReady} onClick={() => send("2")}>
-                    Zubereiten
-                </button>
             </div>
-
         </div>
     );
 };

@@ -24,8 +24,6 @@
     align-items: center;      /* Chart vertikal zentrieren */
 }
 
-
-
 .cornerText {
   padding-left: 0.5vw;
   padding-top: 0.5vh;
@@ -63,11 +61,11 @@ ol li::before {
 }
 
 .backgroundGreen {
-    background-color: #28bc04;
+    background-color: #69b190;
 }
 
 .backgroundRed {
-    background-color: red;
+    background-color: #780808;
 }
 
 .centerText {
