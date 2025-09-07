@@ -1,28 +1,47 @@
-import React, {useEffect, useRef, useState} from 'react';
-import './Analytics.css';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useCoffeeMachine } from "../../common/client/WSClient";
+import React, { useEffect, useRef, useState } from "react";
+import "./Analytics.css";
+import {
+    LineChart,
+    Line,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+} from "recharts";
+import {useWebSocket} from "../../common/context/WebSocketContext";
 
 const Analytics = () => {
-    const { messages, machineReady, send } = useCoffeeMachine();
+    const { logs } = useWebSocket();
 
     const [temperature, setTemperature] = useState<number>(0);
     const [waterLevelIsGood, setWaterLevelIsGood] = useState<boolean>(true);
     const [coffeeGroundsContainerEmpty, setCoffeeGroundsContainerEmpty] = useState<boolean>(true);
     const [waterFlow, setWaterFlow] = useState<number>(0);
     const [currentState, setCurrentState] = useState<string>("Warten");
-    const [chartData, setChartData] = useState<{ name: string, value: number }[]>([]);
+    const [chartData, setChartData] = useState<{ name: string; value: number }[]>([]);
 
     const secondsCounter = useRef(0);
 
     useEffect(() => {
-        if (messages.length === 0) return;
+        if (logs.length === 0) return;
 
-        const latest = messages[messages.length - 1];
+        const latest = logs[logs.length - 1];
+        console.log("📩 Analytics – neue Nachricht:", latest);
+
+        // Erwartetes Format: "Zustand, Temperatur, WasserOK, KaffeesatzOK, Durchfluss"
         const parts = latest.split(",");
 
-        if (parts.length >= 6) {
+        if (parts.length >= 5) {
             const [zustand, temp, wasser, kaffeesatz, durchfluss] = parts;
+
+            console.log("🔍 Parsed:", {
+                zustand,
+                temp,
+                wasser,
+                kaffeesatz,
+                durchfluss,
+            });
 
             setCurrentState(zustand.trim());
             setTemperature(Number(temp));
@@ -33,13 +52,16 @@ const Analytics = () => {
             secondsCounter.current += 1;
             const secondLabel = `Sek ${secondsCounter.current}`;
 
-            setChartData(prev => {
+            setChartData((prev) => {
                 const newData = [...prev, { name: secondLabel, value: Number(temp) }];
                 if (newData.length > 20) newData.shift();
+                console.log("📊 Aktualisiertes Chart:", newData);
                 return newData;
             });
+        } else {
+            console.warn("⚠️ Ungültige Nachricht in Analytics:", latest);
         }
-    }, [messages]);
+    }, [logs]);
 
     const allStates = [
         "Aufheizen",
@@ -48,7 +70,7 @@ const Analytics = () => {
         "Anfeuchten",
         "Brühen",
         "Warten",
-        "Abkühlen"
+        "Abkühlen",
     ];
 
     return (
@@ -61,18 +83,24 @@ const Analytics = () => {
                 <div className="chartWrapper">
                     <ResponsiveContainer width="90%" height="80%">
                         <LineChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3"/>
-                            <XAxis dataKey="name"/>
-                            <YAxis/>
-                            <Tooltip/>
-                            <Line type="monotone" dataKey="value" stroke="#8884d8" dot={false}/>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" />
+                            <YAxis />
+                            <Tooltip />
+                            <Line
+                                type="monotone"
+                                dataKey="value"
+                                stroke="#8884d8"
+                                dot={false}
+                            />
                         </LineChart>
                     </ResponsiveContainer>
                 </div>
             </div>
 
-            <div className="innerDiv"><p className="cornerText">Stärke</p> <p
-                className="numbersText">Drücke einen Kaffee</p>
+            <div className="innerDiv">
+                <p className="cornerText">Stärke</p>
+                <p className="numbersText">Drücke einen Kaffee</p>
             </div>
 
             {/* Wasserdurchfluss */}
@@ -97,24 +125,35 @@ const Analytics = () => {
             </div>
 
             {/* Wasser */}
-            <div className={`waterAndCoffeeStatus ${waterLevelIsGood ? "backgroundGreen" : "backgroundRed"}`}>
+            <div
+                className={`waterAndCoffeeStatus ${
+                    waterLevelIsGood ? "backgroundGreen" : "backgroundRed"
+                }`}
+            >
                 <p className="numbersText centerText">
-                    {waterLevelIsGood ? "Genug Wasser vorhanden" : "Bitte Wasser nachfüllen"}
+                    {waterLevelIsGood
+                        ? "Genug Wasser vorhanden"
+                        : "Bitte Wasser nachfüllen"}
                 </p>
             </div>
 
             {/* Kaffeesatz */}
             <div
-                className={`waterAndCoffeeStatus ${coffeeGroundsContainerEmpty ? "backgroundGreen" : "backgroundRed"}`}>
+                className={`waterAndCoffeeStatus ${
+                    coffeeGroundsContainerEmpty ? "backgroundGreen" : "backgroundRed"
+                }`}
+            >
                 <p className="numbersText centerText">
-                    {coffeeGroundsContainerEmpty ? "Kaffeesatzbehälter frei" : "Bitte Kaffeesatzbehälter leeren"}
+                    {coffeeGroundsContainerEmpty
+                        ? "Kaffeesatzbehälter frei"
+                        : "Bitte Kaffeesatzbehälter leeren"}
                 </p>
             </div>
 
             {/* Debug */}
             <div>
-                <h2>Status</h2>
-                {messages.slice(-5).map((m, i) => (
+                <h2>Status (letzte 5 Nachrichten)</h2>
+                {logs.slice(-5).map((m, i) => (
                     <div key={i}>{m}</div>
                 ))}
             </div>
