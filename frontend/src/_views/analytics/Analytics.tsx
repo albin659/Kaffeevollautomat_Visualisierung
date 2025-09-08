@@ -1,15 +1,28 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./Analytics.css";
-import {
-    LineChart,
-    Line,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-} from "recharts";
 import {useWebSocket} from "../../common/context/WebSocketContext";
+
+import { Line } from "react-chartjs-2";
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+} from "chart.js";
+
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend
+);
 
 const Analytics = () => {
     const { logs } = useWebSocket();
@@ -19,29 +32,27 @@ const Analytics = () => {
     const [coffeeGroundsContainerEmpty, setCoffeeGroundsContainerEmpty] = useState<boolean>(true);
     const [waterFlow, setWaterFlow] = useState<number>(0);
     const [currentState, setCurrentState] = useState<string>("Warten");
-    const [chartData, setChartData] = useState<{ name: string; value: number }[]>([]);
 
-    const secondsCounter = useRef(0);
+
+    const [chartData, setChartData] = useState<{ x: number; y: number }[]>(() => {
+        const saved = localStorage.getItem("chartData");
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    const [secondsCounter, setSecondsCounter] = useState<number>(() => {
+        const saved = localStorage.getItem("secondsCounter");
+        return saved ? Number(saved) : 0;
+    });
+
 
     useEffect(() => {
         if (logs.length === 0) return;
 
         const latest = logs[logs.length - 1];
-        console.log("📩 Analytics – neue Nachricht:", latest);
-
-        // Erwartetes Format: "Zustand, Temperatur, WasserOK, KaffeesatzOK, Durchfluss"
         const parts = latest.split(",");
 
         if (parts.length >= 5) {
             const [zustand, temp, wasser, kaffeesatz, durchfluss] = parts;
-
-            console.log("🔍 Parsed:", {
-                zustand,
-                temp,
-                wasser,
-                kaffeesatz,
-                durchfluss,
-            });
 
             setCurrentState(zustand.trim());
             setTemperature(Number(temp));
@@ -49,19 +60,37 @@ const Analytics = () => {
             setCoffeeGroundsContainerEmpty(kaffeesatz.trim() === "1");
             setWaterFlow(Number(durchfluss));
 
-            secondsCounter.current += 1;
-            const secondLabel = `Sek ${secondsCounter.current}`;
+            setSecondsCounter((prev) => {
+                let next = prev + 1;
 
-            setChartData((prev) => {
-                const newData = [...prev, { name: secondLabel, value: Number(temp) }];
-                if (newData.length > 20) newData.shift();
-                console.log("📊 Aktualisiertes Chart:", newData);
-                return newData;
+                if (next >= 200) {
+                    // Reset sauber machen
+                    next = 0;
+                    const resetData = [{ x: 0, y: Number(temp) }];
+
+                    setChartData(resetData);
+
+                    localStorage.setItem("secondsCounter", "0");
+                    localStorage.setItem("chartData", JSON.stringify(resetData));
+
+                    return next;
+                }
+
+                // normalen Schritt machen
+                const newData = [...chartData, { x: next, y: Number(temp) }];
+                if (newData.length > 50) newData.shift();
+
+                setChartData(newData);
+
+                localStorage.setItem("secondsCounter", String(next));
+                localStorage.setItem("chartData", JSON.stringify(newData));
+
+                return next;
             });
-        } else {
-            console.warn("⚠️ Ungültige Nachricht in Analytics:", latest);
         }
     }, [logs]);
+
+
 
     const allStates = [
         "Aufheizen",
@@ -81,20 +110,36 @@ const Analytics = () => {
             <div className="innerDiv heatDiv">
                 <p className="cornerText">Hitze</p>
                 <div className="chartWrapper">
-                    <ResponsiveContainer width="90%" height="80%">
-                        <LineChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" />
-                            <YAxis />
-                            <Tooltip />
-                            <Line
-                                type="monotone"
-                                dataKey="value"
-                                stroke="#8884d8"
-                                dot={false}
-                            />
-                        </LineChart>
-                    </ResponsiveContainer>
+                    <Line
+                        data={{
+                            datasets: [
+                                {
+                                    label: "Temperatur",
+                                    data: chartData,
+                                    borderColor: "rgba(136,132,216,1)",
+                                    backgroundColor: "rgba(136,132,216,0.2)",
+                                    tension: 0.3,
+                                },
+                            ],
+                        }}
+                        options={{
+                            responsive: true,
+                            animation: false, // verhindert Flackern
+                            scales: {
+                                x: {
+                                    type: "linear",
+                                    min: Math.max(secondsCounter - 20, 0),
+                                    max: secondsCounter,
+                                    title: {display: true, text: "Sekunden"},
+                                },
+                                y: {
+                                    min: 0,
+                                    max: 120, // fixierter Bereich für Temperatur
+                                    title: {display: true, text: "°C"},
+                                },
+                            },
+                        }}
+                    />
                 </div>
             </div>
 

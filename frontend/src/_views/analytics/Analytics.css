@@ -18,11 +18,18 @@
 }
 
 .chartWrapper {
-    flex: 1; /* nimmt den Rest des Platzes */
+    flex: 1;
     display: flex;
-    justify-content: center;  /* Chart horizontal zentrieren */
-    align-items: center;      /* Chart vertikal zentrieren */
+    justify-content: center;
+    align-items: center;
+    height: 100%; /* nimmt genau die Höhe vom Parent (.heatDiv) */
 }
+
+.chartWrapper canvas {
+    max-height: 100% !important;
+    max-width: 100% !important;
+}
+
 
 .cornerText {
   padding-left: 0.5vw;

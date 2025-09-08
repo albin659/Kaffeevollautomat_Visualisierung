@@ -1,14 +1,16 @@
+// CoffeeContext.tsx
 import { createContext, ReactNode, useContext, useState } from "react";
 
-interface CoffeeContextType {
+export interface CoffeeEntry {
     id: number;
     type: string;
     strength: number;
     createdDate: string;
-    setId: (id: number) => void;
-    setType: (type: string) => void;
-    setStrength: (strength: number) => void;
-    setCreatedDate: (date: string) => void;
+}
+
+interface CoffeeContextType {
+    coffees: CoffeeEntry[];
+    addCoffee: (entry: CoffeeEntry) => void;
 }
 
 const CoffeeContext = createContext<CoffeeContextType | undefined>(undefined);
@@ -18,24 +20,14 @@ interface CoffeeProviderProps {
 }
 
 export const CoffeeProvider: React.FC<CoffeeProviderProps> = ({ children }) => {
-    const [id, setId] = useState<number>(0);
-    const [type, setType] = useState<string>("");
-    const [strength, setStrength] = useState<number>(0);
-    const [createdDate, setCreatedDate] = useState<string>("");
+    const [coffees, setCoffees] = useState<CoffeeEntry[]>([]);
+
+    const addCoffee = (entry: CoffeeEntry) => {
+        setCoffees((prev) => [...prev, entry]);
+    };
 
     return (
-        <CoffeeContext.Provider
-            value={{
-                id,
-                type,
-                strength,
-                createdDate,
-                setId,
-                setType,
-                setStrength,
-                setCreatedDate,
-            }}
-        >
+        <CoffeeContext.Provider value={{ coffees, addCoffee }}>
             {children}
         </CoffeeContext.Provider>
     );
