@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "./History.css";
-import {useCoffeeMachine} from "../../common/client/WSClient";
+import { useWebSocket } from "../../common/context/WebSocketContext"; // WebSocketContext statt WSClient
 
 interface HistoryEntry {
     time: string;
@@ -10,7 +10,7 @@ interface HistoryEntry {
 }
 
 const History = () => {
-    const { messages, machineReady, send } = useCoffeeMachine();
+    const { logs } = useWebSocket(); // Verwende useWebSocket statt useCoffeeMachine
     const [coffeeCount, setCoffeeCount] = useState(0)
     const [mostPopularCoffee, setMostPopularCoffee] = useState("Demo Coffee")
 
@@ -54,6 +54,22 @@ const History = () => {
                 <p>Beliebtestes Sortiment: {mostPopularCoffee}</p>
             </div>
 
+            {/* Optional: WebSocket Logs anzeigen */}
+            <div className="history-card">
+                <h3>WebSocket Logs</h3>
+                <div style={{
+                    maxHeight: "200px",
+                    overflowY: "auto",
+                    background: "#f5f5f5",
+                    padding: "10px",
+                    borderRadius: "5px",
+                    fontFamily: "monospace"
+                }}>
+                    {logs.map((log, index) => (
+                        <div key={index}>{log}</div>
+                    ))}
+                </div>
+            </div>
 
         </div>
     );

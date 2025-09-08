@@ -44,7 +44,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
             if (event.data.includes("bereit")) {
                 setIsReady(true);
-                setIsBrewing(false); // Maschine wieder frei
+                setIsBrewing(false);
             }
             if (event.data.includes("heizt") || event.data.includes("aufheizen")) {
                 setIsReady(false);
@@ -67,6 +67,12 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
         ws.current.onerror = (err) => {
             console.error("⚠️ WebSocket Fehler:", err);
+        };
+
+        return () => {
+            if (ws.current) {
+                ws.current.close();
+            }
         };
     }, []);
 
