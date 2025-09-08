@@ -124,7 +124,7 @@ async def heat_up_machine(send):
     total_seconds = 45
     temp_difference = target_temp - start_temp
     
-    for second in range(total_seconds):
+    for second in range(total_seconds + 1):
         current_temp = start_temp + (temp_difference * (second / total_seconds))
         state.temp = round(current_temp, 1)
         

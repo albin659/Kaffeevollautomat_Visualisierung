@@ -42,26 +42,35 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             console.log("📩 Nachricht empfangen:", event.data);
             setLogs(prev => [...prev, event.data]);
 
-            if (event.data.includes("bereit")) {
+            const message = event.data;
+
+            if (message.includes("bereit") || message.includes("Aufheizen abgeschlossen")) {
                 setIsReady(true);
                 setIsBrewing(false);
             }
-            if (event.data.includes("heizt") || event.data.includes("aufheizen")) {
+            if (message.includes("heizt") || message.includes("aufheizen") || message.includes("Aufheizen")) {
                 setIsReady(false);
             }
-            if (event.data.includes("ausgeschaltet")) {
+            if (message.includes("ausgeschaltet")) {
                 setIsOn(false);
                 setIsReady(false);
                 setIsBrewing(false);
             }
-            if (event.data.includes("eingeschaltet")) {
+            if (message.includes("eingeschaltet")) {
                 setIsOn(true);
                 setIsReady(false);
             }
-            if (event.data.includes("Kaffee fertig")) {
-                console.log("☕ Kaffee fertig – Maschine wieder bereit");
+            if (message.includes("Kaffee fertig") || message.includes("Brühen abgeschlossen")) {
                 setIsBrewing(false);
                 setIsReady(true);
+            }
+            if (message.includes("Warten")) {
+                setIsReady(true);
+                setIsBrewing(false);
+            }
+            if (message.includes("Brühen") || message.includes("Mahlen") || message.includes("Pressen")) {
+                setIsBrewing(true);
+                setIsReady(false);
             }
         };
 
