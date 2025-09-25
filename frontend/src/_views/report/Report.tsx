@@ -3,7 +3,7 @@ import { Button, Card } from "react-bootstrap";
 import { useCoffeeContext } from "../../common/context/CoffeeContext";
 import "./Report.css";
 
-// Hilfsfunktion für Datum im Format YYYY-MM-DD
+// Datum im Format YYYY-MM-DD
 const getDateString = () => {
     const now = new Date();
     const yyyy = now.getFullYear();
@@ -28,7 +28,7 @@ const exportCSV = (data: any[], filenamePrefix: string) => {
     document.body.removeChild(link);
 };
 
-// Helper: Montag–Sonntag einer Woche holen
+// Montag–Sonntag einer Woche holen
 const getWeekData = (data: any[]) => {
     const today = new Date();
     const currentDay = today.getDay();
