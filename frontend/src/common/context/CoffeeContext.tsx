@@ -1,4 +1,3 @@
-// CoffeeContext.tsx
 import { createContext, ReactNode, useContext, useState } from "react";
 
 export interface CoffeeEntry {

@@ -1,8 +1,10 @@
 import React, { useState } from "react";
-import {useWebSocket} from "../../common/context/WebSocketContext";
+import { useWebSocket } from "../../common/context/WebSocketContext";
+import { useCoffeeContext } from "../../common/context/CoffeeContext";
 
 const Preparation = () => {
     const { send, logs, isOn, isReady, isBrewing, setIsBrewing } = useWebSocket();
+    const { addCoffee } = useCoffeeContext();
 
     const [coffeeType, setCoffeeType] = useState<string>("Espresso");
     const [amount, setAmount] = useState<number>(1);
@@ -13,17 +15,14 @@ const Preparation = () => {
         console.log("🖱️ Zubereitung gestartet:", { coffeeType, amount, strength });
 
         if (!isOn) {
-            console.warn("⚠️ Maschine ist aus!");
             alert("❌ Maschine ist ausgeschaltet!");
             return;
         }
         if (!isReady) {
-            console.warn("⚠️ Maschine ist noch nicht bereit!");
             alert("⏳ Maschine heizt noch auf – bitte warten!");
             return;
         }
         if (isBrewing) {
-            console.warn("⚠️ Maschine brüht bereits");
             alert("⏳ Die Maschine ist gerade am Brühen!");
             return;
         }
@@ -31,27 +30,35 @@ const Preparation = () => {
         setIsBrewing(true);
 
         send("2"); // Zubereitung starten
-        console.log("📤 Sende: 2 (Zubereitung starten)");
 
         setTimeout(() => {
             send(amount.toString());
-            console.log("📤 Sende Anzahl:", amount);
         }, 50);
 
         setTimeout(() => {
             const typeCode = coffeeType === "Espresso" ? "2" : "1";
             send(typeCode);
-            console.log("📤 Sende Kaffee-Typ:", coffeeType, "Code:", typeCode);
         }, 100);
+
+        // Kaffees im Context speichern
+        setTimeout(() => {
+            const now = new Date().toISOString();
+            for (let i = 0; i < amount; i++) {
+                addCoffee({
+                    id: Date.now() + i,
+                    type: coffeeType,
+                    strength,
+                    createdDate: now,
+                });
+            }
+        }, 200);
     };
 
     const handleFillWater = () => {
-        console.log("🖱️ Wassertank befüllen");
         send("3");
     };
 
     const handleEmptyGrounds = () => {
-        console.log("🖱️ Kaffeesatz leeren");
         send("4");
     };
 

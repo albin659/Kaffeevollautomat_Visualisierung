@@ -9,12 +9,14 @@ import Analytics from "./_views/analytics/Analytics";
 import History from "./_views/history/History";
 import Report from "./_views/report/Report";
 import {WebSocketProvider} from "./common/context/WebSocketContext";
+import {CoffeeProvider} from "./common/context/CoffeeContext";
 
 
 function App() {
     return (
         <BrowserRouter>
             <WebSocketProvider>
+                <CoffeeProvider>
                 <Routes>
                     <Route path="/" element={<Layout />}>
                         <Route path="/dashboard" element={<Dashboard />} />
@@ -24,6 +26,7 @@ function App() {
                         <Route path="/report" element={<Report />} />
                     </Route>
                 </Routes>
+                </CoffeeProvider>
             </WebSocketProvider>
         </BrowserRouter>
     );
