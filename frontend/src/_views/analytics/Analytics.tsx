@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./Analytics.css";
-import {useWebSocket} from "../../common/context/WebSocketContext";
+import { useWebSocket } from "../../common/context/WebSocketContext";
+import { useCoffeeContext } from "../../common/context/CoffeeContext";
 
 import { Line } from "react-chartjs-2";
 import {
@@ -26,13 +27,14 @@ ChartJS.register(
 
 const Analytics = () => {
     const { logs } = useWebSocket();
+    const { coffees } = useCoffeeContext();
 
     const [temperature, setTemperature] = useState<number>(0);
     const [waterLevelIsGood, setWaterLevelIsGood] = useState<boolean>(true);
     const [coffeeGroundsContainerEmpty, setCoffeeGroundsContainerEmpty] = useState<boolean>(true);
     const [waterFlow, setWaterFlow] = useState<number>(0);
     const [currentState, setCurrentState] = useState<string>("Warten");
-
+    const [currentStrength, setCurrentStrength] = useState<number | null>(null);
 
     const [chartData, setChartData] = useState<{ x: number; y: number }[]>(() => {
         const saved = localStorage.getItem("chartData");
@@ -44,6 +46,13 @@ const Analytics = () => {
         return saved ? Number(saved) : 0;
     });
 
+    // Überwache Änderungen in coffees und setze die Stärke des letzten Kaffees
+    useEffect(() => {
+        if (coffees.length > 0 && currentState !== "Warten") {
+            const latestCoffee = coffees[coffees.length - 1];
+            setCurrentStrength(latestCoffee.strength);
+        }
+    }, [coffees, currentState]);
 
     useEffect(() => {
         if (logs.length === 0) return;
@@ -53,8 +62,20 @@ const Analytics = () => {
 
         if (parts.length >= 5) {
             const [zustand, temp, wasser, kaffeesatz, durchfluss] = parts;
+            const newState = zustand.trim();
 
-            setCurrentState(zustand.trim());
+            // Wenn der Status zu "Warten" wechselt, setze die Stärke zurück
+            if ((newState === "Warten" && currentState !== "Warten") || (newState === "Abkühlen" && currentState !== "Abkühlen")) {
+                setCurrentStrength(null);
+            }
+
+            // Wenn ein Brühvorgang beginnt (von Warten zu einem anderen Status)
+            if (currentState === "Warten" && newState !== "Warten" && coffees.length > 0) {
+                const latestCoffee = coffees[coffees.length - 1];
+                setCurrentStrength(latestCoffee.strength);
+            }
+
+            setCurrentState(newState);
             setTemperature(Number(temp));
             setWaterLevelIsGood(wasser.trim() === "1");
             setCoffeeGroundsContainerEmpty(kaffeesatz.trim() === "1");
@@ -88,9 +109,7 @@ const Analytics = () => {
                 return next;
             });
         }
-    }, [logs]);
-
-
+    }, [logs, currentState, coffees]);
 
     const allStates = [
         "Aufheizen",
@@ -101,6 +120,41 @@ const Analytics = () => {
         "Warten",
         "Abkühlen",
     ];
+
+    // Funktion zur Darstellung der Stärke als visuelle Balken
+    const renderStrengthDisplay = () => {
+        if (currentStrength === null) {
+            return <p className="numbersText">Drücke einen Kaffee</p>;
+        }
+
+        return (
+            <div style={{ padding: "10px" }}>
+                <p className="numbersText" style={{ marginBottom: "10px" }}>
+                    Stärke: {currentStrength}/5
+                </p>
+                <div style={{
+                    display: "flex",
+                    gap: "3px",
+                    justifyContent: "center"
+                }}>
+                    {[1, 2, 3, 4, 5].map((level) => (
+                        <div
+                            key={level}
+                            style={{
+                                width: "20px",
+                                height: "30px",
+                                backgroundColor: level <= currentStrength
+                                    ? "#8884d8"
+                                    : "#e0e0e0",
+                                borderRadius: "3px",
+                                transition: "background-color 0.3s"
+                            }}
+                        />
+                    ))}
+                </div>
+            </div>
+        );
+    };
 
     return (
         <div className="outerDiv">
@@ -130,12 +184,12 @@ const Analytics = () => {
                                     type: "linear",
                                     min: Math.max(secondsCounter - 20, 0),
                                     max: secondsCounter,
-                                    title: {display: true, text: "Sekunden"},
+                                    title: { display: true, text: "Sekunden" },
                                 },
                                 y: {
                                     min: 0,
                                     max: 120, // fixierter Bereich für Temperatur
-                                    title: {display: true, text: "°C"},
+                                    title: { display: true, text: "°C" },
                                 },
                             },
                         }}
@@ -143,9 +197,10 @@ const Analytics = () => {
                 </div>
             </div>
 
+            {/* Stärke */}
             <div className="innerDiv">
                 <p className="cornerText">Stärke</p>
-                <p className="numbersText">Drücke einen Kaffee</p>
+                {renderStrengthDisplay()}
             </div>
 
             {/* Wasserdurchfluss */}
