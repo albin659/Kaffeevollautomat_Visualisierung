@@ -1,6 +1,11 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import './Menubar.css';
+import HomeIcon from '@mui/icons-material/Home';
+import LocalCafeIcon from '@mui/icons-material/LocalCafe';
+import AnalyticsIcon from '@mui/icons-material/Analytics';
+import HistoryIcon from '@mui/icons-material/History';
+import DescriptionIcon from '@mui/icons-material/Description';
 
 const MenuBar = () => {
     const navigate = useNavigate();
@@ -25,15 +30,14 @@ const MenuBar = () => {
             {/* Navigation */}
             <ul className="nav flex-column w-100">
                 <li className="nav-item">
-                    <Link className={`nav-link ${isActive("/dashboard")}`} to="/dashboard">Dashboard</Link>
-                    <Link className={`nav-link ${isActive("/preparation")}`} to="/preparation">Preparation</Link>
-                    <Link className={`nav-link ${isActive("/analytic")}`} to="/analytic">Analytics</Link>
-                    <Link className={`nav-link ${isActive("/history")}`} to="/history">History</Link>
-                    <Link className={`nav-link ${isActive("/report")}`} to="/report">Report</Link>
+                    <Link className={`nav-link ${isActive("/dashboard")}`} to="/dashboard"><HomeIcon/> Dashboard</Link>
+                    <Link className={`nav-link ${isActive("/preparation")}`} to="/preparation"><LocalCafeIcon/> Preparation</Link>
+                    <Link className={`nav-link ${isActive("/analytic")}`} to="/analytic"><AnalyticsIcon/> Analytics</Link>
+                    <Link className={`nav-link ${isActive("/history")}`} to="/history"><HistoryIcon/> History</Link>
+                    <Link className={`nav-link ${isActive("/report")}`} to="/report"><DescriptionIcon/> Report</Link>
                 </li>
             </ul>
 
-            {/* Footer */}
             <div className="mt-auto text-center small text-muted mb-3">
                 <div className="footer-separator"></div>
                 Diplomarbeit 2025<br/>Sensor Monitoring
