@@ -35,9 +35,19 @@ async def get_heating_data():
     data = await collection.find().sort("_id", 1).to_list(length=None)
     return data
 
+async def get_heating_data_from_current_temp(current_temp):
+    collection = database.Aufheizen
+    data = await collection.find({"temperature": {"$gte": current_temp}}).sort("temperature", 1).to_list(length=None)
+    return data
+
 async def get_cooling_data():
     collection = database.Abkühlen
     data = await collection.find().sort("_id", 1).to_list(length=None)
+    return data
+
+async def get_cooling_data_from_current_temp(current_temp):
+    collection = database.Abkühlen
+    data = await collection.find({"temperature": {"$lte": current_temp}}).sort("temperature", -1).to_list(length=None)
     return data
 
 async def get_coffee_data(coffee_type: str, amount: int):
@@ -51,7 +61,7 @@ async def get_coffee_data(coffee_type: str, amount: int):
     return data
 
 async def heat_up_machine_from_db(send):
-    heating_data = await get_heating_data()
+    heating_data = await get_heating_data_from_current_temp(state.temp)
     
     for entry in heating_data:
         state.temp = entry['temperature']
@@ -64,10 +74,24 @@ async def heat_up_machine_from_db(send):
     
     state.water_flow = 0
 
-async def cool_down_machine_from_db(send):
-    cooling_data = await get_cooling_data()
+async def cool_down_machine_from_db(send, websocket=None):
+    cooling_data = await get_cooling_data_from_current_temp(state.temp)
+    
+    if not cooling_data:
+        cooling_data = await get_cooling_data()
+    
+    cooling_interrupted = False
     
     for entry in cooling_data:
+        if websocket:
+            try:
+                message = await asyncio.wait_for(websocket.recv(), timeout=0.1)
+                if message == "1":  
+                    cooling_interrupted = True
+                    break
+            except asyncio.TimeoutError:
+                pass
+        
         state.temp = entry['temperature']
         state.water_flow = entry['water_flow']
         state.water_ok = entry['water_ok']
@@ -76,8 +100,11 @@ async def cool_down_machine_from_db(send):
         await send(f"Abkühlen,{state.to_csv()}")
         await asyncio.sleep(1)
     
-    state.powered_on = False
-    await send(f"Ausgeschaltet,{state.to_csv()}")
+    if not cooling_interrupted:
+        state.powered_on = False
+        await send(f"Ausgeschaltet,{state.to_csv()}")
+    else:
+        await heat_up_machine_from_db(send)
 
 async def make_coffee_from_db(coffee_type: str, amount: int, send):
     coffee_data = await get_coffee_data(coffee_type, amount)
@@ -118,26 +145,20 @@ async def make_coffee_from_db(coffee_type: str, amount: int, send):
     return brew_successful
 
 async def wait_for_input_with_timeout(websocket, send, timeout=120):
-    """
-    Wait for input with a total timeout of 120 seconds
-    Send "Warten" status every second during the countdown
-    """
     remaining_time = timeout
     
     while remaining_time > 0:
         try:
-            # Wait for message with 1 second timeout to allow for status updates
             message = await asyncio.wait_for(websocket.recv(), timeout=1)
             return message
         except asyncio.TimeoutError:
             remaining_time -= 1
             await send(f"Warten,{state.to_csv()}")
     
-    # Timeout reached
     await send(f"Timeout,{state.to_csv()}")
     return "timeout"
 
-async def handle_command(option, send):
+async def handle_command(option, send, websocket=None):
     if option == "1":
         if not state.powered_on:
             state.powered_on = True
@@ -170,7 +191,7 @@ async def handle_command(option, send):
         return "ready"
 
     elif option == "5":
-        await cool_down_machine_from_db(send)
+        await cool_down_machine_from_db(send, websocket)
         return "ready"
 
     else:
@@ -189,7 +210,7 @@ async def echo(websocket):
                 message = await wait_for_input_with_timeout(websocket, send)
                 
                 if message == "timeout":
-                    await cool_down_machine_from_db(send)
+                    await cool_down_machine_from_db(send, websocket)
                     current_state = "ready"
                     continue
             else:
@@ -209,17 +230,16 @@ async def echo(websocket):
                         current_state = "ready"
                         continue
                     
-                    # Actually make the coffee
                     await make_coffee_from_db(message, current_amount, send)
                     current_state = "ready"
                 else:
-                    result = await handle_command(message, send)
+                    result = await handle_command(message, send, websocket)
                     if result:
                         current_state = result
                 continue
 
             if current_state == "ready":
-                result = await handle_command(message, send)
+                result = await handle_command(message, send, websocket)
                 if result:
                     current_state = result
                     
@@ -233,10 +253,10 @@ async def echo(websocket):
 async def main():
     try:
         await database.command('ping')
-        print("✅ MongoDB Verbindung erfolgreich")
+        print("MongoDB Verbindung erfolgreich")
         
     except Exception as e:
-        print(f"❌ MongoDB Verbindung fehlgeschlagen: {e}")
+        print(f"MongoDB Verbindung fehlgeschlagen: {e}")
         return
     
     async with websockets.serve(echo, "localhost", 8765):
