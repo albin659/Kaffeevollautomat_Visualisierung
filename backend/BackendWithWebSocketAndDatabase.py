@@ -24,8 +24,8 @@ class MachineState:
         return f"{self.temp},{water_flag},{grounds_flag},{self.water_flow},{date.today().strftime('%d.%m.%Y')}"
 
 coffee_types = {
-    "1": {"name": "Normal"},
-    "2": {"name": "Espresso"}
+    "1": {"name": "Normal", "collection_prefix": "Normalen"},
+    "2": {"name": "Espresso", "collection_prefix": "Espresso"}
 }
 
 state = MachineState()
@@ -50,15 +50,46 @@ async def get_cooling_data_from_current_temp(current_temp):
     data = await collection.find({"temperature": {"$lte": current_temp}}).sort("temperature", -1).to_list(length=None)
     return data
 
-async def get_coffee_data(coffee_type: str, amount: int):
-    if amount == 1:
-        collection_name = "Einen_Kaffee_Brühen"
-    else:  
-        collection_name = "Zwei_Kaffee_Brühen"
+async def get_coffee_step_data(step_name: str, coffee_type: str, amount: int):
+    coffee_info = coffee_types[coffee_type]
+    
+    if step_name == "Mahlen":
+        collection_name = "Mahlen"
+    elif step_name == "Pressen":
+        collection_name = "Pressen"
+    elif step_name == "Anfeuchten":
+        collection_name = "Anfeuchten"
+    elif step_name == "Brühen":
+        if amount == 1:
+            if coffee_info["collection_prefix"] == "Espresso":
+                collection_name = f"Einen_Espresso_Brühen"
+            else:
+                collection_name = f"Einen_Normalen_Kaffee_Brühen"
+        else:
+            if coffee_info["collection_prefix"] == "Espresso":
+                collection_name = f"Zwei_Espresso_Brühen"
+            else:
+                collection_name = f"Zwei_Normale_Kaffee_Brühen"
+    elif step_name == "Zur_Startposition":
+        collection_name = "Zur_Startposition"
+    else:
+        return []
     
     collection = database[collection_name]
     data = await collection.find().sort("_id", 1).to_list(length=None)
     return data
+
+async def get_coffee_workflow(coffee_type: str, amount: int):
+    workflow = [
+        {"step": "Mahlen", "type": "step"},
+        {"step": "Pressen", "type": "step"},
+        {"step": "Anfeuchten", "type": "step"},
+        {"step": "Brühen", "type": "step", "coffee_type": coffee_type, "amount": amount},
+        {"step": "Zur_Startposition", "type": "step"},
+        {"step": "Warten", "type": "wait", "duration": 1},
+    ]
+    
+    return workflow
 
 async def heat_up_machine_from_db(send):
     heating_data = await get_heating_data_from_current_temp(state.temp)
@@ -106,12 +137,17 @@ async def cool_down_machine_from_db(send, websocket=None):
     else:
         await heat_up_machine_from_db(send)
 
-async def make_coffee_from_db(coffee_type: str, amount: int, send):
-    coffee_data = await get_coffee_data(coffee_type, amount)
+async def execute_coffee_step(step_name: str, coffee_type: str, amount: int, send):
+    """
+    Führt einen einzelnen Kaffee-Schritt aus
+    """
+    step_data = await get_coffee_step_data(step_name, coffee_type, amount)
     
-    brew_successful = True
+    if not step_data:
+        print(f"Keine Daten gefunden für Schritt: {step_name}")
+        return True
     
-    for entry in coffee_data:
+    for entry in step_data:
         state.temp = entry['temperature']
         state.water_flow = entry['water_flow']
         state.water_ok = entry['water_ok']
@@ -120,16 +156,43 @@ async def make_coffee_from_db(coffee_type: str, amount: int, send):
         if not state.water_ok:
             await send(f"Wasser leer,{state.to_csv()}")
             print("Wasser leer - Brühen abgebrochen")
-            brew_successful = False
-            break
+            return False
         if not state.grounds_ok:
             await send(f"Kaffeesatz voll,{state.to_csv()}")
             print("Kaffeesatz voll - Brühen abgebrochen")
-            brew_successful = False
-            break
+            return False
         
-        await send(f"{entry['step_type']},{state.to_csv()}")
+        await send(f"{step_name},{state.to_csv()}")
         await asyncio.sleep(1)
+    
+    return True
+
+async def make_coffee_from_db(coffee_type: str, amount: int, send):
+    workflow = await get_coffee_workflow(coffee_type, amount)
+    brew_successful = True
+    
+    for step_info in workflow:
+        step_name = step_info["step"]
+        step_type = step_info["type"]
+        
+        if step_type == "step":
+            if step_name == "Brühen":
+                success = await execute_coffee_step(
+                    step_name, 
+                    step_info["coffee_type"], 
+                    step_info["amount"], 
+                    send
+                )
+            else:
+                success = await execute_coffee_step(step_name, coffee_type, amount, send)
+            
+            if not success:
+                brew_successful = False
+                break
+                
+        elif step_type == "wait":
+            await send(f"Warten,{state.to_csv()}")
+            await asyncio.sleep(step_info["duration"])
     
     if brew_successful:        
         state.cups_since_empty += amount
