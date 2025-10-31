@@ -84,7 +84,7 @@ const Analytics = () => {
             setSecondsCounter((prev) => {
                 let next = prev + 1;
 
-                if (next >= 200) {
+                if (next >= 500) {
                     // Reset sauber machen
                     next = 0;
                     const resetData = [{ x: 0, y: Number(temp) }];
@@ -117,6 +117,7 @@ const Analytics = () => {
         "Pressen",
         "Anfeuchten",
         "Brühen",
+        "Zur Startposition",
         "Warten",
         "Abkühlen",
     ];
