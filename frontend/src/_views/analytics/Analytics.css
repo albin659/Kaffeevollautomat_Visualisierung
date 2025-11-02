@@ -82,3 +82,52 @@ ol li::before {
     height: 8vh;
 
 }
+
+.state-container {
+    padding: 0.75rem;
+}
+
+.state-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    padding: 0.5rem 0;
+}
+
+.state-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 1rem;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: center;
+}
+
+.state-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.state-card-active {
+    transform: translateY(-6px);
+    box-shadow: 0 10px 30px rgba(0,0,0,.15);
+    border-bottom: 4px solid #17a2b8;
+}
+
+.state-card-header {
+    margin-bottom: 0.75rem;
+}
+
+.state-logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+.state-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #162a4f;
+    margin: 0;
+}
