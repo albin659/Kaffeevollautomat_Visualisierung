@@ -46,36 +46,61 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             console.log("📩 Nachricht empfangen:", message);
             setLogs(prev => [...prev, message]);
 
+            // CSV-Format: "Status,temp,water_ok,grounds_ok,water_flow,date"
+            const parts = message.split(",");
+            const status = parts[0];
+
+            // Maschine ausgeschaltet - HÖCHSTE PRIORITÄT
+            if (status.toLowerCase().includes("ausgeschaltet")) {
+                setIsOn(false);
+                setIsReady(false);
+                setIsBrewing(false);
+                return;
+            }
+
+            // Kühlt ab - läuft im Hintergrund, Frontend bleibt "ausgeschaltet"
+            if (status.toLowerCase().includes("abkühlen")) {
+                // Status bleibt ausgeschaltet im Frontend
+                setIsOn(false);
+                setIsReady(false);
+                setIsBrewing(false);
+                return;
+            }
+
             setIsOn(prevIsOn => {
-                // Maschine ausgeschaltet
-                if (message.includes("ausgeschaltet")) {
+                if (status.toLowerCase().includes("aufheizen")) {
                     setIsReady(false);
                     setIsBrewing(false);
-                    return false;
+                    return true;
                 }
-
-                // Maschine eingeschaltet
-                if (message.includes("eingeschaltet")) {
+                if (status.toLowerCase().includes("warten") && prevIsOn) {
+                    setIsReady(true);
+                    setIsBrewing(false);
+                    return true;
+                }
+                if (status.toLowerCase().includes("brühen") ||
+                    status.toLowerCase().includes("mahlen") ||
+                    status.toLowerCase().includes("pressen") ||
+                    status.toLowerCase().includes("anfeuchten") ||
+                    status.toLowerCase().includes("zur_startposition")) {
+                    setIsBrewing(true);
                     setIsReady(false);
                     return true;
                 }
 
-                // Brüht oder Mahlprozess
-                if (message.includes("Brühen") || message.includes("Mahlen") || message.includes("Pressen")) {
-                    setIsBrewing(true);
-                    setIsReady(false);
-                }
-
-                // Brühprozess fertig
-                if (message.includes("Kaffee fertig") || message.includes("Brühen abgeschlossen")) {
+                // Fehler
+                if (status.toLowerCase().includes("wasser leer") ||
+                    status.toLowerCase().includes("kaffeesatz voll")) {
                     setIsBrewing(false);
-                    setIsReady(prevIsOn);
+                    setIsReady(false);
+                    return true;
                 }
-
-                // Maschine ist bereit **nur wenn eingeschaltet**
-                if ((message.includes("bereit") || message.includes("Aufheizen abgeschlossen")) && prevIsOn) {
+                // Wartung
+                if (status.toLowerCase().includes("wasser aufgefüllt") ||
+                    status.toLowerCase().includes("kaffeesatz geleert")) {
                     setIsReady(true);
                     setIsBrewing(false);
+                    return true;
                 }
 
                 return prevIsOn;

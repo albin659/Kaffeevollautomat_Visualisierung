@@ -28,8 +28,9 @@ const Dashboard = () => {
             setIsOn(true);
             setIsReady(false);
         } else {
-            console.log("⏹ Ausschalten");
+            console.log("⏹ Ausschalten - Abkühlen läuft im Hintergrund");
             send("5");
+            // SOFORT Frontend-Status ändern
             setIsOn(false);
             setIsReady(false);
         }
