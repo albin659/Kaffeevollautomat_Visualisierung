@@ -211,18 +211,28 @@ const Analytics = () => {
             </div>
 
             {/* Zustand */}
-            <div className="innerDiv">
+            <div className="innerDiv state-container">
                 <p className="cornerText">Aktueller Zustand</p>
-                <ol className="numbersText">
-                    {allStates.map((state, idx) => (
-                        <li
-                            key={idx}
-                            className={state === currentState ? "current-state" : ""}
+
+                <div className="state-grid">
+                    {allStates.map((state) => (
+                        <div
+                            key={state}
+                            className={`state-card ${state === currentState ? "state-card-active" : ""}`}
                         >
-                            {state}
-                        </li>
+                            <div className="state-card-header">
+                                <img
+                                    className="state-logo"
+                                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' fill='%23ccc'/%3E%3C/svg%3E"
+                                    alt={state}
+                                />
+                            </div>
+                            <div className="state-card-body">
+                                <p className="state-label">{state}</p>
+                            </div>
+                        </div>
                     ))}
-                </ol>
+                </div>
             </div>
 
             {/* Wasser */}
