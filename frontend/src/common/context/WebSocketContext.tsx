@@ -23,7 +23,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const [isBrewing, setIsBrewing] = useState(false);
 
     useEffect(() => {
-        console.log("🔌 Starte Verbindung zum Backend...");
+        console.log("🔌 Verbindungsaufbau...");
         ws.current = new WebSocket("ws://localhost:8765");
 
         ws.current.onopen = () => {
@@ -35,43 +35,51 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         ws.current.onclose = () => {
             console.log("❌ WebSocket getrennt");
             setIsConnected(false);
+            setIsOn(false);
+            setIsReady(false);
+            setIsBrewing(false);
             setLogs(prev => [...prev, "❌ Verbindung getrennt"]);
         };
 
         ws.current.onmessage = (event) => {
-            console.log("📩 Nachricht empfangen:", event.data);
-            setLogs(prev => [...prev, event.data]);
-
             const message = event.data;
+            console.log("📩 Nachricht empfangen:", message);
+            setLogs(prev => [...prev, message]);
 
-            if (message.includes("bereit") || message.includes("Aufheizen abgeschlossen")) {
-                setIsReady(true);
-                setIsBrewing(false);
-            }
-            if (message.includes("heizt") || message.includes("aufheizen") || message.includes("Aufheizen")) {
-                setIsReady(false);
-            }
-            if (message.includes("ausgeschaltet")) {
-                setIsOn(false);
-                setIsReady(false);
-                setIsBrewing(false);
-            }
-            if (message.includes("eingeschaltet")) {
-                setIsOn(true);
-                setIsReady(false);
-            }
-            if (message.includes("Kaffee fertig") || message.includes("Brühen abgeschlossen")) {
-                setIsBrewing(false);
-                setIsReady(true);
-            }
-            if (message.includes("Warten")) {
-                setIsReady(true);
-                setIsBrewing(false);
-            }
-            if (message.includes("Brühen") || message.includes("Mahlen") || message.includes("Pressen")) {
-                setIsBrewing(true);
-                setIsReady(false);
-            }
+            setIsOn(prevIsOn => {
+                // Maschine ausgeschaltet
+                if (message.includes("ausgeschaltet")) {
+                    setIsReady(false);
+                    setIsBrewing(false);
+                    return false;
+                }
+
+                // Maschine eingeschaltet
+                if (message.includes("eingeschaltet")) {
+                    setIsReady(false);
+                    return true;
+                }
+
+                // Brüht oder Mahlprozess
+                if (message.includes("Brühen") || message.includes("Mahlen") || message.includes("Pressen")) {
+                    setIsBrewing(true);
+                    setIsReady(false);
+                }
+
+                // Brühprozess fertig
+                if (message.includes("Kaffee fertig") || message.includes("Brühen abgeschlossen")) {
+                    setIsBrewing(false);
+                    setIsReady(prevIsOn);
+                }
+
+                // Maschine ist bereit **nur wenn eingeschaltet**
+                if ((message.includes("bereit") || message.includes("Aufheizen abgeschlossen")) && prevIsOn) {
+                    setIsReady(true);
+                    setIsBrewing(false);
+                }
+
+                return prevIsOn;
+            });
         };
 
         ws.current.onerror = (err) => {
@@ -79,9 +87,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         };
 
         return () => {
-            if (ws.current) {
-                ws.current.close();
-            }
+            if (ws.current) ws.current.close();
         };
     }, []);
 
@@ -90,7 +96,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             console.log("📤 Sende Nachricht:", msg);
             ws.current.send(msg);
         } else {
-            console.warn("⚠️ Nachricht konnte nicht gesendet werden (keine Verbindung):", msg);
+            console.warn("⚠️ Keine Verbindung – Nachricht nicht gesendet:", msg);
         }
     };
 
@@ -104,6 +110,6 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
 export const useWebSocket = () => {
     const ctx = useContext(WebSocketContext);
-    if (!ctx) throw new Error("useWebSocket muss innerhalb von WebSocketProvider genutzt werden!");
+    if (!ctx) throw new Error("useWebSocket muss in WebSocketProvider genutzt werden!");
     return ctx;
 };
