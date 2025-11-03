@@ -34,17 +34,14 @@ const Preparation = () => {
             setWaterLevelIsGood(wasser.trim() === "1");
             setCoffeeGroundsContainerEmpty(kaffeesatz.trim() === "1");
 
-            // Alert bei Wasser leer
             if (zustand.toLowerCase().includes("wasser leer")) {
                 showSnackbar("Wassertank ist leer! Bitte nachfüllen.", "error");
             }
 
-            // Alert bei Kaffeesatz voll
             if (zustand.toLowerCase().includes("kaffeesatz voll")) {
                 showSnackbar("Kaffeesatzbehälter ist voll! Bitte leeren.", "error");
             }
 
-            // Alert wenn Kaffee fertig
             if (zustand.toLowerCase().includes("warten") && isBrewing) {
                 showSnackbar(`Ihr ${coffeeType} wird zubereitet! ☕ Genießen Sie!`, "success");
                 setIsBrewing(false);
@@ -155,7 +152,7 @@ const Preparation = () => {
             <div className="preparation-hero">
                 <div className="hero-content">
                     <h1 className="hero-title">Zubereitung</h1>
-                    <p className="hero-subtitle">☕ Konfigurieren Sie Ihren perfekten Kaffee</p>
+                    <p className="hero-subtitle"> Konfigurieren Sie Ihren perfekten Kaffee</p>
                 </div>
                 <div className="hero-decoration">
                     <div className="decoration-circle circle-1"></div>
