@@ -1,10 +1,151 @@
+.report-container {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0.5rem;
+    animation: fadeIn 0.5s ease-in;
+    box-sizing: border-box;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.report-hero {
+    position: relative;
+    background: linear-gradient(135deg, #2d4f2d 0%, #3a6b3a 100%);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(45, 79, 45, 0.2);
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+}
+
+.hero-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: white;
+    margin: 0 0 0.5rem 0;
+    letter-spacing: -1px;
+}
+
+.hero-subtitle {
+    font-size: 1.25rem;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0;
+    font-weight: 400;
+}
+
+.hero-decoration {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.decoration-circle {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.circle-1 {
+    width: 250px;
+    height: 250px;
+    top: -80px;
+    right: -40px;
+}
+
+.circle-2 {
+    width: 160px;
+    height: 160px;
+    top: 40px;
+    right: 120px;
+}
+
+.circle-3 {
+    width: 120px;
+    height: 120px;
+    bottom: -40px;
+    right: 80px;
+}
+
 .report-button {
-    background-color: #162a4f !important; /* gleiche Farbe für beide Buttons */
-    border-color: #162a4f !important;
-    color: white !important;
+    background: linear-gradient(135deg, #2d4f2d 0%, #3a6b3a 100%);
+    border: none;
+    border-radius: 12px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(45, 79, 45, 0.2);
 }
 
 .report-button:hover {
-    background-color: #162a4f !important;
-    border-color: #162a4f !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(45, 79, 45, 0.3);
+    background: linear-gradient(135deg, #3a6b3a 0%, #2d4f2d 100%);
+}
+
+/* Verwende die gleichen Stile wie Dashboard für Konsistenz */
+.status-grid,
+.status-card,
+.status-card-primary,
+.status-card-header,
+.status-icon,
+.status-card-body,
+.status-label,
+.status-value,
+.status-card-footer,
+.status-indicator,
+.info-section,
+.info-card-modern,
+.info-header,
+.info-emoji,
+.info-title,
+.info-text,
+.feature-list-modern,
+.check-icon,
+.control-button-modern,
+.button-icon,
+.button-text {
+    /* Diese Klassen werden aus Dashboard.css übernommen */
+    /* Stelle sicher, dass Dashboard.css importiert ist */
+}
+
+@media (max-width: 768px) {
+    .report-container {
+        padding: 0.75rem 1rem;
+    }
+
+    .report-hero {
+        padding: 1.25rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .hero-title {
+        font-size: 2rem;
+    }
+
+    .hero-subtitle {
+        font-size: 1rem;
+    }
+
+    .circle-1,
+    .circle-2,
+    .circle-3 {
+        display: none;
+    }
 }
