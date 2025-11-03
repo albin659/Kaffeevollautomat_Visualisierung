@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useWebSocket } from "../../common/context/WebSocketContext";
 import { useCoffeeContext } from "../../common/context/CoffeeContext";
+import { useLanguage } from "../../common/context/LanguageContext";
 import "./Dashboard.css";
 
 const Dashboard = () => {
     const { send, isConnected, logs, isOn, setIsOn, setIsReady, isReady, isBrewing } = useWebSocket();
     const { coffees } = useCoffeeContext();
+    const { texts } = useLanguage();
     const [initialized, setInitialized] = useState(false);
 
     useEffect(() => {
@@ -30,7 +32,6 @@ const Dashboard = () => {
         } else {
             console.log("⏹ Ausschalten - Abkühlen läuft im Hintergrund");
             send("5");
-            // SOFORT Frontend-Status ändern
             setIsOn(false);
             setIsReady(false);
         }
@@ -47,15 +48,21 @@ const Dashboard = () => {
         if (isBrewing) return "#ffc107";
         if (isReady) return "#28a745";
         if (isOn) return "#17a2b8";
-        return "#6c757d"; // Ausgeschaltet
+        return "#6c757d";
     };
 
     const getStatusText = () => {
-        if (!isConnected) return "Nicht verbunden";
-        if (isBrewing) return "Brüht gerade...";
-        if (isReady) return "Bereit";
-        if (isOn) return "Heizt auf...";
-        return "Ausgeschaltet"; // Default Zustand
+        if (!isConnected) return texts.notConnected;
+        if (isBrewing) return texts.brewing;
+        if (isReady) return texts.ready;
+        if (isOn) return texts.heating;
+        return texts.turnedOff;
+    };
+
+    const getButtonText = () => {
+        if (!isConnected) return texts.connecting;
+        if (isOn) return texts.turnMachineOff;
+        return texts.turnMachineOn;
     };
 
     return (
@@ -63,8 +70,8 @@ const Dashboard = () => {
             {/* Hero Header */}
             <div className="dashboard-hero">
                 <div className="hero-content">
-                    <h1 className="hero-title">Dashboard</h1>
-                    <p className="hero-subtitle">Kaffeevollautomat Steuerung</p>
+                    <h1 className="hero-title">{texts.dashboard}</h1>
+                    <p className="hero-subtitle">{texts.coffeeMachineControl}</p>
                 </div>
                 <div className="hero-decoration">
                     <div className="decoration-circle circle-1"></div>
@@ -88,9 +95,9 @@ const Dashboard = () => {
                         </div>
                     </div>
                     <div className="status-card-body">
-                        <p className="status-label">MASCHINEN-STATUS</p>
+                        <p className="status-label">{texts.machineStatus}</p>
                         <h3 className="status-value" style={{ color: getStatusColor() }}>
-                            {!initialized && isConnected ? "Status wird abgefragt..." : getStatusText()}
+                            {!initialized && isConnected ? texts.statusChecking : getStatusText()}
                         </h3>
                     </div>
                     <div className="status-card-footer">
@@ -108,8 +115,8 @@ const Dashboard = () => {
                         </div>
                     </div>
                     <div className="status-card-body">
-                        <p className="status-label">HEUTE GEBRÜHT</p>
-                        <h3 className="status-value">{todaysCoffees.length} Tassen</h3>
+                        <p className="status-label">{texts.brewedToday}</p>
+                        <h3 className="status-value">{todaysCoffees.length} {texts.cups}</h3>
                     </div>
                 </div>
 
@@ -122,8 +129,8 @@ const Dashboard = () => {
                         </div>
                     </div>
                     <div className="status-card-body">
-                        <p className="status-label">GESAMT GEBRÜHT</p>
-                        <h3 className="status-value">{coffees.length} Tassen</h3>
+                        <p className="status-label">{texts.totalBrewed}</p>
+                        <h3 className="status-value">{coffees.length} {texts.cups}</h3>
                     </div>
                 </div>
 
@@ -139,18 +146,18 @@ const Dashboard = () => {
                         </div>
                     </div>
                     <div className="status-card-body">
-                        <p className="status-label">VERBINDUNG</p>
+                        <p className="status-label">{texts.connection}</p>
                         <h3 className="status-value" style={{ color: isConnected ? "#28a745" : "#dc3545" }}>
-                            {isConnected ? "Verbunden" : "Getrennt"}
+                            {isConnected ? texts.connected : texts.disconnected}
                         </h3>
                     </div>
                 </div>
             </div>
 
-            {/* Steuerung - Neues Design */}
+            {/* Steuerung */}
             <div className="control-panel">
                 <div className="control-panel-inner">
-                    <h2 className="control-title">Maschinensteuerung</h2>
+                    <h2 className="control-title">{texts.machineControl}</h2>
                     <button
                         className={`control-button-modern ${!isConnected ? "disabled" : isOn ? "active" : ""}`}
                         onClick={toggleMachine}
@@ -166,30 +173,29 @@ const Dashboard = () => {
                             </svg>
                         </span>
                         <span className="button-text">
-                            {!isConnected ? "Verbinden..." : isOn ? "Maschine Ausschalten" : "Maschine Einschalten"}
+                            {getButtonText()}
                         </span>
                     </button>
                 </div>
             </div>
 
-            {/* Info Karten - Verbessertes Design */}
+            {/* Info Karten */}
             <div className="info-section">
                 <div className="info-card-modern">
                     <div className="info-header">
                         <span className="info-emoji">🎓</span>
-                        <h3 className="info-title">Über dieses Projekt</h3>
+                        <h3 className="info-title">{texts.aboutProject}</h3>
                     </div>
                     <p className="info-text">
-                        Diese Anwendung visualisiert den Zubereitungsprozess eines Kaffeevollautomaten
-                        in Echtzeit. Entwickelt als Diplomarbeit 2025/26 von <strong>Albin Bajrami</strong>,
-                        <strong>Lirik Dauti</strong> und <strong>David Fink</strong> an der HTBLA Kaindorf.
+                        {texts.projectDescription} <strong>Albin Bajrami</strong>,{" "}
+                        <strong>Lirik Dauti</strong> {texts.and} <strong>David Fink</strong> {texts.at} HTBLA Kaindorf.
                     </p>
                 </div>
 
                 <div className="info-card-modern">
                     <div className="info-header">
                         <span className="info-emoji">⚙️</span>
-                        <h3 className="info-title">Technologie-Stack</h3>
+                        <h3 className="info-title">{texts.technologyStack}</h3>
                     </div>
                     <div className="tech-grid">
                         <span className="tech-badge">React + TypeScript</span>
@@ -203,28 +209,28 @@ const Dashboard = () => {
                 <div className="info-card-modern">
                     <div className="info-header">
                         <span className="info-emoji">📊</span>
-                        <h3 className="info-title">Funktionen</h3>
+                        <h3 className="info-title">{texts.features}</h3>
                     </div>
                     <ul className="feature-list-modern">
                         <li>
                             <span className="check-icon">✓</span>
-                            <span>Echtzeitüberwachung der Sensordaten</span>
+                            <span>{texts.realtimeMonitoring}</span>
                         </li>
                         <li>
                             <span className="check-icon">✓</span>
-                            <span>Temperatur- und Durchflussmessung</span>
+                            <span>{texts.temperatureFlow}</span>
                         </li>
                         <li>
                             <span className="check-icon">✓</span>
-                            <span>Automatische Brühprozess-Steuerung</span>
+                            <span>{texts.brewingProcess}</span>
                         </li>
                         <li>
                             <span className="check-icon">✓</span>
-                            <span>Statistiken und CSV-Export</span>
+                            <span>{texts.statisticsExport}</span>
                         </li>
                         <li>
                             <span className="check-icon">✓</span>
-                            <span>Vollständige Kaffee-Historie</span>
+                            <span>{texts.coffeeHistory}</span>
                         </li>
                     </ul>
                 </div>

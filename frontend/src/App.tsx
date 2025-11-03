@@ -10,6 +10,7 @@ import History from "./_views/history/History";
 import Report from "./_views/report/Report";
 import {WebSocketProvider} from "./common/context/WebSocketContext";
 import {CoffeeProvider} from "./common/context/CoffeeContext";
+import {LanguageProvider} from "./common/context/LanguageContext";
 
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
         <BrowserRouter>
             <WebSocketProvider>
                 <CoffeeProvider>
+                    <LanguageProvider>
                 <Routes>
                     <Route path="/" element={<Layout />}>
                         <Route index element={<Navigate to="/dashboard" replace />} />
@@ -27,6 +29,7 @@ function App() {
                         <Route path="/report" element={<Report />} />
                     </Route>
                 </Routes>
+                    </LanguageProvider>
                 </CoffeeProvider>
             </WebSocketProvider>
         </BrowserRouter>
