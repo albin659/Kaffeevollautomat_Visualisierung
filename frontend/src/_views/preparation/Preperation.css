@@ -47,35 +47,6 @@
     font-weight: 400;
 }
 
-.hero-decoration {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-}
-
-.decoration-circle {
-    position: absolute;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.circle-1 {
-    width: 200px;
-    height: 200px;
-    top: -60px;
-    right: -30px;
-}
-
-.circle-2 {
-    width: 120px;
-    height: 120px;
-    bottom: -30px;
-    right: 60px;
-}
-
 /* Grid Layout */
 .preparation-grid {
     display: grid;

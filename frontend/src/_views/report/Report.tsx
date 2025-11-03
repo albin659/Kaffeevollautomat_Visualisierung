@@ -67,11 +67,6 @@ const Report: React.FC = () => {
                     <h1 className="hero-title">Berichte & Export</h1>
                     <p className="hero-subtitle">Kaffeedaten exportieren und analysieren</p>
                 </div>
-                <div className="hero-decoration">
-                    <div className="decoration-circle circle-1"></div>
-                    <div className="decoration-circle circle-2"></div>
-                    <div className="decoration-circle circle-3"></div>
-                </div>
             </div>
 
             {/* Statistik Karten */}

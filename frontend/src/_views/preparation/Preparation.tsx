@@ -154,10 +154,6 @@ const Preparation = () => {
                     <h1 className="hero-title">Zubereitung</h1>
                     <p className="hero-subtitle"> Konfigurieren Sie Ihren perfekten Kaffee</p>
                 </div>
-                <div className="hero-decoration">
-                    <div className="decoration-circle circle-1"></div>
-                    <div className="decoration-circle circle-2"></div>
-                </div>
             </div>
 
             <div className="preparation-grid">
