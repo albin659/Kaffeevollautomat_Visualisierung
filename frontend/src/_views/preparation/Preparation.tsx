@@ -5,6 +5,21 @@ import "./Preperation.css";
 
 // MUI Imports
 import { Snackbar, Alert, AlertTitle } from "@mui/material";
+import CoffeeIcon from '@mui/icons-material/Coffee';
+import BuildIcon from '@mui/icons-material/Build';
+import SettingsIcon from '@mui/icons-material/Settings';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import AutorenewIcon from '@mui/icons-material/Autorenew';
+import WaterDropIcon from '@mui/icons-material/WaterDrop';
+import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
+import PowerIcon from '@mui/icons-material/Power';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ErrorIcon from '@mui/icons-material/Error';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
+import LocalCafeIcon from '@mui/icons-material/LocalCafe';
+import BoltIcon from '@mui/icons-material/Bolt';
+import HistoryIcon from '@mui/icons-material/History';
 
 const Preparation = () => {
     const { send, logs, isOn, isReady, isBrewing, setIsBrewing } = useWebSocket();
@@ -160,7 +175,7 @@ const Preparation = () => {
                 {/* Konfigurations-Karte */}
                 <div className="config-card">
                     <div className="card-header">
-                        <span className="card-icon">⚙️</span>
+                        <SettingsIcon style={{ fontSize: 24, color: "#1976d2" }} />
                         <h2 className="card-title">Kaffee-Konfiguration</h2>
                     </div>
 
@@ -168,10 +183,7 @@ const Preparation = () => {
                         {/* Kaffeeart */}
                         <div className="form-group">
                             <label className="form-label">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
-                                    <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
-                                </svg>
+                                <LocalCafeIcon style={{ fontSize: 20, marginRight: 8 }} />
                                 Kaffeeart
                             </label>
                             <div className="radio-group">
@@ -184,7 +196,7 @@ const Preparation = () => {
                                         onChange={(e) => setCoffeeType(e.target.value)}
                                     />
                                     <div className="radio-content">
-                                        <span className="radio-emoji">☕</span>
+                                        <CoffeeIcon style={{ fontSize: 24 }} />
                                         <span className="radio-text">Espresso</span>
                                     </div>
                                 </label>
@@ -197,7 +209,7 @@ const Preparation = () => {
                                         onChange={(e) => setCoffeeType(e.target.value)}
                                     />
                                     <div className="radio-content">
-                                        <span className="radio-emoji">☕</span>
+                                        <CoffeeIcon style={{ fontSize: 24 }} />
                                         <span className="radio-text">Schwarz</span>
                                     </div>
                                 </label>
@@ -207,10 +219,7 @@ const Preparation = () => {
                         {/* Anzahl */}
                         <div className="form-group">
                             <label className="form-label">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
+                                <AddIcon style={{ fontSize: 20, marginRight: 8 }} />
                                 Anzahl
                             </label>
                             <select
@@ -226,9 +235,7 @@ const Preparation = () => {
                         {/* Stärke */}
                         <div className="form-group">
                             <label className="form-label">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
-                                </svg>
+                                <BoltIcon style={{ fontSize: 20, marginRight: 8 }} />
                                 Stärke
                             </label>
                             <div className="strength-selector">
@@ -259,20 +266,9 @@ const Preparation = () => {
                         >
                             <span className="button-icon">
                                 {isBrewing ? (
-                                    <svg className="spinner" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <line x1="12" y1="2" x2="12" y2="6"></line>
-                                        <line x1="12" y1="18" x2="12" y2="22"></line>
-                                        <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
-                                        <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
-                                        <line x1="2" y1="12" x2="6" y2="12"></line>
-                                        <line x1="18" y1="12" x2="22" y2="12"></line>
-                                        <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
-                                        <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
-                                    </svg>
+                                    <AutorenewIcon className="spinner" style={{ fontSize: 24 }} />
                                 ) : (
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                                    </svg>
+                                    <PlayArrowIcon style={{ fontSize: 24 }} />
                                 )}
                             </span>
                             <span className="button-text">
@@ -285,7 +281,7 @@ const Preparation = () => {
                 {/* Wartungs-Karte */}
                 <div className="maintenance-card">
                     <div className="card-header">
-                        <span className="card-icon">🔧</span>
+                        <BuildIcon style={{ fontSize: 24, color: "#1976d2" }} />
                         <h2 className="card-title">Wartung</h2>
                     </div>
 
@@ -297,9 +293,7 @@ const Preparation = () => {
                             onClick={handleFillWater}
                         >
                             <div className="maintenance-icon">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
-                                </svg>
+                                <WaterDropIcon style={{ fontSize: 24 }} />
                             </div>
                             <div className="maintenance-content">
                                 <h3 className="maintenance-title">Wassertank</h3>
@@ -316,10 +310,7 @@ const Preparation = () => {
                             onClick={handleEmptyGrounds}
                         >
                             <div className="maintenance-icon">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                </svg>
+                                <DeleteSweepIcon style={{ fontSize: 24 }} />
                             </div>
                             <div className="maintenance-content">
                                 <h3 className="maintenance-title">Kaffeesatz</h3>
@@ -333,19 +324,27 @@ const Preparation = () => {
                     {/* Status Info */}
                     <div className="status-info">
                         <div className="status-item">
-                            <span className={`status-dot ${isOn ? "active" : ""}`}></span>
+                            <span className={`status-dot ${isOn ? "active" : ""}`}>
+                                {isOn ? <PowerIcon style={{ fontSize: 12, color: "white" }} /> : <RemoveIcon style={{ fontSize: 12, color: "white" }} />}
+                            </span>
                             <span className="status-text">Maschine: {isOn ? "An" : "Aus"}</span>
                         </div>
                         <div className="status-item">
-                            <span className={`status-dot ${isReady ? "active" : ""}`}></span>
+                            <span className={`status-dot ${isReady ? "active" : ""}`}>
+                                {isReady ? <CheckCircleIcon style={{ fontSize: 12, color: "white" }} /> : <ErrorIcon style={{ fontSize: 12, color: "white" }} />}
+                            </span>
                             <span className="status-text">Status: {isReady ? "Bereit" : "Nicht bereit"}</span>
                         </div>
                         <div className="status-item">
-                            <span className={`status-dot ${waterLevelIsGood ? "active" : "error"}`}></span>
+                            <span className={`status-dot ${waterLevelIsGood ? "active" : "error"}`}>
+                                {waterLevelIsGood ? <CheckCircleIcon style={{ fontSize: 12, color: "white" }} /> : <ErrorIcon style={{ fontSize: 12, color: "white" }} />}
+                            </span>
                             <span className="status-text">Wasser: {waterLevelIsGood ? "OK" : "Leer"}</span>
                         </div>
                         <div className="status-item">
-                            <span className={`status-dot ${coffeeGroundsContainerEmpty ? "active" : "error"}`}></span>
+                            <span className={`status-dot ${coffeeGroundsContainerEmpty ? "active" : "error"}`}>
+                                {coffeeGroundsContainerEmpty ? <CheckCircleIcon style={{ fontSize: 12, color: "white" }} /> : <ErrorIcon style={{ fontSize: 12, color: "white" }} />}
+                            </span>
                             <span className="status-text">Kaffeesatz: {coffeeGroundsContainerEmpty ? "OK" : "Voll"}</span>
                         </div>
                     </div>
@@ -355,7 +354,7 @@ const Preparation = () => {
             {/* Heute gebrühte Kaffees  */}
             <div className="logs-card">
                 <div className="card-header">
-                    <span className="card-icon">☕</span>
+                    <HistoryIcon style={{ fontSize: 24, color: "#1976d2" }} />
                     <h2 className="card-title">Heute gebrühte Kaffees ({todaysCoffees.length})</h2>
                 </div>
                 <div className="logs-content">

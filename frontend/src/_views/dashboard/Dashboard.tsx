@@ -4,6 +4,17 @@ import { useCoffeeContext } from "../../common/context/CoffeeContext";
 import { useLanguage } from "../../common/context/LanguageContext";
 import "./Dashboard.css";
 
+// Material-UI Icons importieren
+import CoffeeIcon from '@mui/icons-material/Coffee';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import WifiIcon from '@mui/icons-material/Wifi';
+import SchoolIcon from '@mui/icons-material/School';
+import BuildIcon from '@mui/icons-material/Build';
+import AnalyticsIcon from '@mui/icons-material/Analytics';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import StopIcon from '@mui/icons-material/Stop';
+
 const Dashboard = () => {
     const { send, isConnected, logs, isOn, setIsOn, setIsReady, isReady, isBrewing } = useWebSocket();
     const { coffees } = useCoffeeContext();
@@ -73,21 +84,15 @@ const Dashboard = () => {
                     <h1 className="hero-title">{texts.dashboard}</h1>
                     <p className="hero-subtitle">{texts.coffeeMachineControl}</p>
                 </div>
-
             </div>
 
             {/* Status Karten Grid */}
             <div className="status-grid">
+                {/* Maschinen-Status */}
                 <div className="status-card status-card-primary">
                     <div className="status-card-header">
                         <div className="status-icon" style={{ backgroundColor: getStatusColor() }}>
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                                <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
-                                <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
-                                <line x1="6" y1="1" x2="6" y2="4" />
-                                <line x1="10" y1="1" x2="10" y2="4" />
-                                <line x1="14" y1="1" x2="14" y2="4" />
-                            </svg>
+                            <CoffeeIcon style={{ fontSize: 28, color: "white" }} />
                         </div>
                     </div>
                     <div className="status-card-body">
@@ -101,13 +106,11 @@ const Dashboard = () => {
                     </div>
                 </div>
 
+                {/* Heute Gebrüht */}
                 <div className="status-card">
                     <div className="status-card-header">
                         <div className="status-icon" style={{ backgroundColor: "#162a4f" }}>
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                                <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
-                                <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
-                            </svg>
+                            <EmojiEventsIcon style={{ fontSize: 28, color: "white" }} />
                         </div>
                     </div>
                     <div className="status-card-body">
@@ -116,12 +119,11 @@ const Dashboard = () => {
                     </div>
                 </div>
 
+                {/* Gesamt Gebrüht */}
                 <div className="status-card">
                     <div className="status-card-header">
                         <div className="status-icon" style={{ backgroundColor: "#5a6268" }}>
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                            </svg>
+                            <TrendingUpIcon style={{ fontSize: 28, color: "white" }} />
                         </div>
                     </div>
                     <div className="status-card-body">
@@ -130,15 +132,11 @@ const Dashboard = () => {
                     </div>
                 </div>
 
+                {/* Verbindung */}
                 <div className="status-card">
                     <div className="status-card-header">
                         <div className="status-icon" style={{ backgroundColor: isConnected ? "#28a745" : "#dc3545" }}>
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                                <path d="M5 12.55a11 11 0 0 1 14.08 0" />
-                                <path d="M1.42 9a16 16 0 0 1 21.16 0" />
-                                <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
-                                <line x1="12" y1="20" x2="12.01" y2="20" />
-                            </svg>
+                            <WifiIcon style={{ fontSize: 28, color: "white" }} />
                         </div>
                     </div>
                     <div className="status-card-body">
@@ -160,13 +158,11 @@ const Dashboard = () => {
                         disabled={!isConnected}
                     >
                         <span className="button-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                {isOn ? (
-                                    <rect x="6" y="4" width="4" height="16" rx="1" />
-                                ) : (
-                                    <polygon points="5 3 19 12 5 21 5 3" />
-                                )}
-                            </svg>
+                            {isOn ? (
+                                <StopIcon style={{ fontSize: 24 }} />
+                            ) : (
+                                <PlayArrowIcon style={{ fontSize: 24 }} />
+                            )}
                         </span>
                         <span className="button-text">
                             {getButtonText()}
@@ -177,9 +173,10 @@ const Dashboard = () => {
 
             {/* Info Karten */}
             <div className="info-section">
+                {/* Über dieses Projekt */}
                 <div className="info-card-modern">
                     <div className="info-header">
-                        <span className="info-emoji">🎓</span>
+                        <SchoolIcon style={{ fontSize: 24, color: "#1976d2" }} />
                         <h3 className="info-title">{texts.aboutProject}</h3>
                     </div>
                     <p className="info-text">
@@ -188,9 +185,10 @@ const Dashboard = () => {
                     </p>
                 </div>
 
+                {/* Technologie-Stack */}
                 <div className="info-card-modern">
                     <div className="info-header">
-                        <span className="info-emoji">⚙️</span>
+                        <BuildIcon style={{ fontSize: 24, color: "#1976d2" }} />
                         <h3 className="info-title">{texts.technologyStack}</h3>
                     </div>
                     <div className="tech-grid">
@@ -202,9 +200,10 @@ const Dashboard = () => {
                     </div>
                 </div>
 
+                {/* Funktionen */}
                 <div className="info-card-modern">
                     <div className="info-header">
-                        <span className="info-emoji">📊</span>
+                        <AnalyticsIcon style={{ fontSize: 24, color: "#1976d2" }} />
                         <h3 className="info-title">{texts.features}</h3>
                     </div>
                     <ul className="feature-list-modern">
