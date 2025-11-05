@@ -1,5 +1,4 @@
 .history-container {
-    padding: 20px;
 }
 
 .history-card {
@@ -25,4 +24,10 @@
 
 .history-table th {
     font-weight: bold;
+}
+
+p {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #162a4f;
 }

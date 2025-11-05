@@ -1,17 +1,20 @@
 .outerDiv {
-  margin-left: 3vw;
+  margin-left: 0.5vw;
   margin-top: 1vh;
 }
 
 .innerDiv {
-  background-color: #ffff;
-  border-radius: 10px;
-  margin-bottom: 1.5vh;
-    border: 1px solid rgba(0, 0, 0, 0.125);
+    background-color: #ffff;
+    margin-bottom: 1.5vh;
+    border-radius: 14px;
+    padding: 1rem;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .heatDiv {
-    height: 500px;
+    height: 550px;
     display: flex;
     flex-direction: column; /* Text oben, Chart darunter */
     position: relative;
@@ -68,7 +71,7 @@ ol li::before {
 }
 
 .backgroundGreen {
-    background-color: #69b190;
+    background-color: #4FBF26 ;
 }
 
 .backgroundRed {
@@ -80,7 +83,6 @@ ol li::before {
     justify-content: center;
     align-items: center;
     height: 8vh;
-
 }
 
 .state-container {
@@ -112,7 +114,7 @@ ol li::before {
 .state-card-active {
     transform: translateY(-6px);
     box-shadow: 0 10px 30px rgba(0,0,0,.15);
-    border-bottom: 4px solid #17a2b8;
+    border-bottom: 4px solid #162a4f;
 }
 
 .state-card-header {
@@ -126,8 +128,66 @@ ol li::before {
 }
 
 .state-label {
+    margin: 0;
+}
+
+p {
     font-size: 0.9rem;
     font-weight: 600;
     color: #162a4f;
-    margin: 0;
+}
+
+.control-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #162a4f;
+    margin: 0 0 1.25rem 0;
+}
+
+.infoGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.25rem;
+}
+
+.info-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #162a4f;
+    padding-left: 0.5vw;
+    padding-top: 0.5vh;
+}
+
+.info-title-state {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #162a4f;
+    text-align: center;
+}
+
+.info-subtitle {
+    font-size: 1.125rem;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding-left: 0.5vw;
+}
+
+.iconConfig {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #162a4f;
+}
+
+.hoverInfo {
+    transition: all 0.3s ease;
+}
+
+.hoverInfo:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }

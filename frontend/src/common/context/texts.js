@@ -40,6 +40,31 @@ export const texts = {
         statisticsExport: 'Statistiken und CSV-Export',
         coffeeHistory: 'Vollständige Kaffee-Historie',
 
+        // Analytics spezifisch
+        aboutAnalytics: 'Beobachten Sie alles im Detail',
+        heatGraph: 'Hitze',
+        coffeeStrength: 'Stärke',
+        machineWaterFlow: 'Wasserdurchfluss',
+        currentState: 'Aktueller Zustand',
+        temperatureChart: 'Temperatur',
+        secondsChart: 'Sekunden',
+        heatingState: 'Aufheizen',
+        grindingState: 'Mahlen',
+        pressingState: 'Pressen',
+        wettingState: 'Anfeuchten',
+        brewingState: 'Brühen',
+        toStartPositionState: 'Zur Startposition',
+        waitState: 'Warten',
+        coolingDownState: 'Abkühlen',
+        pressCoffee: 'Drücke einen Kaffee',
+        strengthText: 'Stärke',
+
+        // Verlauf spezifisch
+        aboutHistory: 'Historie aller Zubereitungen',
+        historyHeader: 'Kaffee-Verlauf',
+        historyCoffeeStatistic: 'Kaffee-Statistik',
+
+
         // Allgemein
         and: 'und',
         at: 'an der'
@@ -83,6 +108,30 @@ export const texts = {
         brewingProcess: 'Automatic brewing process control',
         statisticsExport: 'Statistics and CSV export',
         coffeeHistory: 'Complete coffee history',
+
+        // Analytics spezifisch
+        aboutAnalytics: 'Look at everything in detail',
+        heatGraph: 'Heat',
+        coffeeStrength: 'Strength',
+        machineWaterFlow: 'Waterflow',
+        currentState: 'Current State',
+        temperatureChart: 'Temperature',
+        secondsChart: 'Seconds',
+        heatingState: 'Heating up',
+        grindingState: 'Grindig',
+        pressingState: 'Pressing',
+        wettingState: 'Wetting',
+        brewingState: 'Brewing',
+        toStartPositionState: 'To Startposition',
+        waitState: 'Waiting',
+        coolingDownState: 'Cooling down',
+        pressCoffee: 'Press a Coffee',
+        strengthText: 'Strength',
+
+        // Verlauf spezifisch
+        aboutHistory: 'History of all preparations',
+        historyHeader: 'Coffee History',
+        historyCoffeeStatistic: 'Coffee Statistics',
 
         // Allgemein
         and: 'and',

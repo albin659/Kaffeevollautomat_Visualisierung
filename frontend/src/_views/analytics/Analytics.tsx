@@ -1,7 +1,16 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, {useEffect, useRef, useState} from "react";
 import "./Analytics.css";
 import { useWebSocket } from "../../common/context/WebSocketContext";
 import { useCoffeeContext } from "../../common/context/CoffeeContext";
+
+import { GiHeatHaze, GiManualMeatGrinder } from "react-icons/gi";
+import { MdCompress, MdCoffeeMaker } from "react-icons/md";
+import { BsMoisture } from "react-icons/bs";
+import { VscDebugRestart } from "react-icons/vsc";
+import { FiPauseCircle } from "react-icons/fi";
+import { RiTempColdLine } from "react-icons/ri";
+import { IoSpeedometerOutline } from "react-icons/io5";
+import {BiWater} from "react-icons/bi";
 
 import { Line } from "react-chartjs-2";
 import {
@@ -14,6 +23,7 @@ import {
     Tooltip,
     Legend,
 } from "chart.js";
+import {useLanguage} from "../../common/context/LanguageContext";
 
 ChartJS.register(
     CategoryScale,
@@ -28,12 +38,13 @@ ChartJS.register(
 const Analytics = () => {
     const { logs } = useWebSocket();
     const { coffees } = useCoffeeContext();
+    const { texts } = useLanguage();
 
     const [temperature, setTemperature] = useState<number>(0);
     const [waterLevelIsGood, setWaterLevelIsGood] = useState<boolean>(true);
     const [coffeeGroundsContainerEmpty, setCoffeeGroundsContainerEmpty] = useState<boolean>(true);
     const [waterFlow, setWaterFlow] = useState<number>(0);
-    const [currentState, setCurrentState] = useState<string>("Warten");
+    const [currentState, setCurrentState] = useState<string>(texts.waitState);
     const [currentStrength, setCurrentStrength] = useState<number | null>(null);
 
     const [chartData, setChartData] = useState<{ x: number; y: number }[]>(() => {
@@ -48,7 +59,7 @@ const Analytics = () => {
 
     // Überwache Änderungen in coffees und setze die Stärke des letzten Kaffees
     useEffect(() => {
-        if (coffees.length > 0 && currentState !== "Warten") {
+        if (coffees.length > 0 && currentState !== texts.waitState) {
             const latestCoffee = coffees[coffees.length - 1];
             setCurrentStrength(latestCoffee.strength);
         }
@@ -64,13 +75,16 @@ const Analytics = () => {
             const [zustand, temp, wasser, kaffeesatz, durchfluss] = parts;
             const newState = zustand.trim();
 
-            // Wenn der Status zu "Warten" wechselt, setze die Stärke zurück
-            if ((newState === "Warten" && currentState !== "Warten") || (newState === "Abkühlen" && currentState !== "Abkühlen")) {
+            // When state changes to waiting or cooling, reset strength
+            if (
+                (newState === texts.waitState && currentState !== texts.waitState) ||
+                (newState === texts.coolingDownState && currentState !== texts.coolingDownState)
+            ) {
                 setCurrentStrength(null);
             }
 
-            // Wenn ein Brühvorgang beginnt (von Warten zu einem anderen Status)
-            if (currentState === "Warten" && newState !== "Warten" && coffees.length > 0) {
+            // When brewing starts (from waiting to another state)
+            if (currentState === texts.waitState && newState !== texts.waitState && coffees.length > 0) {
                 const latestCoffee = coffees[coffees.length - 1];
                 setCurrentStrength(latestCoffee.strength);
             }
@@ -85,10 +99,8 @@ const Analytics = () => {
                 let next = prev + 1;
 
                 if (next >= 500) {
-                    // Reset sauber machen
                     next = 0;
                     const resetData = [{ x: 0, y: Number(temp) }];
-
                     setChartData(resetData);
 
                     localStorage.setItem("secondsCounter", "0");
@@ -97,7 +109,6 @@ const Analytics = () => {
                     return next;
                 }
 
-                // normalen Schritt machen
                 const newData = [...chartData, { x: next, y: Number(temp) }];
                 if (newData.length > 50) newData.shift();
 
@@ -109,29 +120,49 @@ const Analytics = () => {
                 return next;
             });
         }
-    }, [logs, currentState, coffees]);
+    }, [logs, currentState, coffees, texts]);
+
 
     const allStates = [
-        "Aufheizen",
-        "Mahlen",
-        "Pressen",
-        "Anfeuchten",
-        "Brühen",
-        "Zur Startposition",
-        "Warten",
-        "Abkühlen",
+        texts.heatingState,
+        texts.grindingState,
+        texts.pressingState,
+        texts.wettingState,
+        texts.brewingState,
+        texts.toStartPositionState,
+        texts.waitState,
+        texts.coolingDownState,
     ];
+
+    // Funktion zum Abrufen des passenden Icons für jeden Zustand
+    const getStateIcon = (state: string) => {
+        const iconMap: Record<string, React.ComponentType<{ size?: number }>> = {
+            [texts.heatingState]: GiHeatHaze,
+            [texts.grindingState]: GiManualMeatGrinder,
+            [texts.pressingState]: MdCompress,
+            [texts.wettingState]: BsMoisture,
+            [texts.brewingState]: MdCoffeeMaker,
+            [texts.toStartPositionState]: VscDebugRestart,
+            [texts.waitState]: FiPauseCircle,
+            [texts.coolingDownState]: RiTempColdLine,
+        };
+
+        const IconComponent = iconMap[state];
+        return IconComponent ? <IconComponent size={32} /> : null;
+    };
+
+
 
     // Funktion zur Darstellung der Stärke als visuelle Balken
     const renderStrengthDisplay = () => {
         if (currentStrength === null) {
-            return <p className="numbersText">Drücke einen Kaffee</p>;
+            return <p className="numbersText">{texts.pressCoffee}</p>;
         }
 
         return (
             <div style={{ padding: "10px" }}>
                 <p className="numbersText" style={{ marginBottom: "10px" }}>
-                    Stärke: {currentStrength}/5
+                    {texts.strengthText}: {currentStrength}/5
                 </p>
                 <div style={{
                     display: "flex",
@@ -145,7 +176,7 @@ const Analytics = () => {
                                 width: "20px",
                                 height: "30px",
                                 backgroundColor: level <= currentStrength
-                                    ? "#8884d8"
+                                    ? "#162a4f"
                                     : "#e0e0e0",
                                 borderRadius: "3px",
                                 transition: "background-color 0.3s"
@@ -159,20 +190,29 @@ const Analytics = () => {
 
     return (
         <div className="outerDiv">
-            <h1>Analytics</h1>
+            <div className="dashboard-hero">
+                <div className="hero-content">
+                    <h1 className="hero-title">{texts.analytics}</h1>
+                    <p className="hero-subtitle">{texts.aboutAnalytics}</p>
+                </div>
+            </div>
 
             {/* Temperatur */}
             <div className="innerDiv heatDiv">
-                <p className="cornerText">Hitze</p>
+                <div className="card-header">
+                    <GiHeatHaze className="iconConfig" />
+                    <p className="info-title"> {texts.heatGraph}</p>
+                </div>
+
                 <div className="chartWrapper">
                     <Line
                         data={{
                             datasets: [
                                 {
-                                    label: "Temperatur",
+                                    label: texts.temperatureChart,
                                     data: chartData,
-                                    borderColor: "rgba(136,132,216,1)",
-                                    backgroundColor: "rgba(136,132,216,0.2)",
+                                    borderColor: "rgba(22,42,79,1)",
+                                    backgroundColor: "rgba(22,42,79,0,2)",
                                     tension: 0.3,
                                 },
                             ],
@@ -185,7 +225,7 @@ const Analytics = () => {
                                     type: "linear",
                                     min: Math.max(secondsCounter - 20, 0),
                                     max: secondsCounter,
-                                    title: { display: true, text: "Sekunden" },
+                                    title: { display: true, text: texts.secondsChart },
                                 },
                                 y: {
                                     min: 0,
@@ -198,21 +238,31 @@ const Analytics = () => {
                 </div>
             </div>
 
-            {/* Stärke */}
-            <div className="innerDiv">
-                <p className="cornerText">Stärke</p>
-                {renderStrengthDisplay()}
-            </div>
+            <div className="infoGrid">
+                {/* Stärke */}
+                <div className="innerDiv">
+                    <div className="card-header">
+                        <IoSpeedometerOutline className="iconConfig" />
+                        <p className="info-title"> {texts.coffeeStrength}</p>
+                    </div>
 
-            {/* Wasserdurchfluss */}
-            <div className="innerDiv">
-                <p className="cornerText">Wasserdurchfluss</p>
-                <p className="numbersText">{waterFlow} mL/s</p>
+                    {renderStrengthDisplay()}
+                </div>
+
+                {/* Wasserdurchfluss */}
+                <div className="innerDiv">
+                    <div className="card-header">
+                        <BiWater className="iconConfig" />
+                        <p className="info-title">{texts.machineWaterFlow}</p>
+                    </div>
+
+                    <p className="numbersText">{waterFlow} mL/s</p>
+                </div>
             </div>
 
             {/* Zustand */}
             <div className="innerDiv state-container">
-                <p className="cornerText">Aktueller Zustand</p>
+                <p className="info-title-state">{texts.currentState}</p>
 
                 <div className="state-grid">
                     {allStates.map((state) => (
@@ -221,11 +271,7 @@ const Analytics = () => {
                             className={`state-card ${state === currentState ? "state-card-active" : ""}`}
                         >
                             <div className="state-card-header">
-                                <img
-                                    className="state-logo"
-                                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' fill='%23ccc'/%3E%3C/svg%3E"
-                                    alt={state}
-                                />
+                                {getStateIcon(state)}
                             </div>
                             <div className="state-card-body">
                                 <p className="state-label">{state}</p>
@@ -235,39 +281,34 @@ const Analytics = () => {
                 </div>
             </div>
 
-            {/* Wasser */}
-            <div
-                className={`waterAndCoffeeStatus ${
-                    waterLevelIsGood ? "backgroundGreen" : "backgroundRed"
-                }`}
-            >
-                <p className="numbersText centerText">
-                    {waterLevelIsGood
-                        ? "Genug Wasser vorhanden"
-                        : "Bitte Wasser nachfüllen"}
-                </p>
+            <div className="infoGrid">
+                {/* Wasser */}
+                <div
+                    className={`hoverInfo waterAndCoffeeStatus ${
+                        waterLevelIsGood ? "backgroundGreen" : "backgroundRed"
+                    }`}
+                >
+                    <p className="numbersText centerText">
+                        {waterLevelIsGood
+                            ? "Genug Wasser vorhanden"
+                            : "Bitte Wasser nachfüllen"}
+                    </p>
+                </div>
+
+                {/* Kaffeesatz */}
+                <div
+                    className={`hoverInfo waterAndCoffeeStatus ${
+                        coffeeGroundsContainerEmpty ? "backgroundGreen" : "backgroundRed"
+                    }`}
+                >
+                    <p className="numbersText centerText">
+                        {coffeeGroundsContainerEmpty
+                            ? "Kaffeesatzbehälter frei"
+                            : "Bitte Kaffeesatzbehälter leeren"}
+                    </p>
+                </div>
             </div>
 
-            {/* Kaffeesatz */}
-            <div
-                className={`waterAndCoffeeStatus ${
-                    coffeeGroundsContainerEmpty ? "backgroundGreen" : "backgroundRed"
-                }`}
-            >
-                <p className="numbersText centerText">
-                    {coffeeGroundsContainerEmpty
-                        ? "Kaffeesatzbehälter frei"
-                        : "Bitte Kaffeesatzbehälter leeren"}
-                </p>
-            </div>
-
-            {/* Debug */}
-            <div>
-                <h2>Status (letzte 5 Nachrichten)</h2>
-                {logs.slice(-5).map((m, i) => (
-                    <div key={i}>{m}</div>
-                ))}
-            </div>
         </div>
     );
 };

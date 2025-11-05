@@ -2,10 +2,12 @@ import React, { useMemo } from "react";
 import "./History.css";
 import { useWebSocket } from "../../common/context/WebSocketContext";
 import { useCoffeeContext } from "../../common/context/CoffeeContext";
+import {useLanguage} from "../../common/context/LanguageContext";
 
 const History = () => {
     const { logs } = useWebSocket();
     const { coffees } = useCoffeeContext();
+    const { texts } = useLanguage();
 
     // Statistiken berechnen
     const statistics = useMemo(() => {
@@ -45,10 +47,15 @@ const History = () => {
 
     return (
         <div className="history-container">
-            <h2>History</h2>
+            <div className="dashboard-hero">
+                <div className="hero-content">
+                    <h1 className="hero-title">{texts.history}</h1>
+                    <p className="hero-subtitle">{texts.aboutHistory}</p>
+                </div>
+            </div>
 
             <div className="history-card">
-                <h3>Kaffee-Verlauf</h3>
+                <h3>{texts.historyHeader}</h3>
                 {coffees.length > 0 ? (
                     <table className="history-table">
                         <thead>
@@ -85,34 +92,10 @@ const History = () => {
             </div>
 
             <div className="history-card">
-                <h3>Kaffee-Statistik</h3>
+                <h3>{texts.historyCoffeeStatistic}</h3>
                 <p>Heute gebrüht: <strong>{statistics.todayCount}</strong> Tassen</p>
                 <p>Gesamt gebrüht: <strong>{statistics.totalCount}</strong> Tassen</p>
                 <p>Beliebteste Sorte: <strong>{statistics.mostPopularType}</strong></p>
-            </div>
-
-            {/* Debug */}
-            <div className="history-card">
-                <h3>WebSocket Logs</h3>
-                <div style={{
-                    maxHeight: "200px",
-                    overflowY: "auto",
-                    background: "#f5f5f5",
-                    padding: "10px",
-                    borderRadius: "5px",
-                    fontFamily: "monospace",
-                    fontSize: "0.9rem"
-                }}>
-                    {logs.length > 0 ? (
-                        logs.map((log, index) => (
-                            <div key={index}>{log}</div>
-                        ))
-                    ) : (
-                        <p style={{ color: '#999', margin: 0 }}>
-                            Keine Logs vorhanden
-                        </p>
-                    )}
-                </div>
             </div>
         </div>
     );
