@@ -7,6 +7,7 @@ type Language = 'de' | 'en';
 interface LanguageProps {
     language: Language,
     setLanguage: (value: Language) => void,
+    translate(value: string): string,
     texts: typeof texts['de']
 }
 
@@ -23,8 +24,29 @@ export const useLanguage = () => {
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     const [language, setLanguage] = useState<Language>('de');
 
+    const translate = (value: string): string => {
+        if (language === 'de') return value;
+
+        const text = texts[language][value as keyof typeof texts['de']];
+        if (typeof text === 'string') {
+            return text;
+        }
+
+        // Falls der Wert ein State-Text (z. B. "Aufheizen") ist
+        const deStates = texts['de'].state;
+        const enStates = texts['en'].state;
+
+        for (const key in deStates) {
+            if (deStates[key as keyof typeof deStates] === value) {
+                return enStates[key as keyof typeof enStates];
+            }
+        }
+
+        return value;
+    };
+
     return (
-        <LanguageContext.Provider value={{ setLanguage, language, texts: texts[language] }}>
+        <LanguageContext.Provider value={{ setLanguage, translate, language, texts: texts[language] }}>
             {children}
         </LanguageContext.Provider>
     )
