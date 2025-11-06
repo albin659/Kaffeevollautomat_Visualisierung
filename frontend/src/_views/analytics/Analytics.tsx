@@ -38,13 +38,13 @@ ChartJS.register(
 const Analytics = () => {
     const { logs } = useWebSocket();
     const { coffees } = useCoffeeContext();
-    const { texts } = useLanguage();
+    const { texts, translate } = useLanguage();
 
     const [temperature, setTemperature] = useState<number>(0);
     const [waterLevelIsGood, setWaterLevelIsGood] = useState<boolean>(true);
     const [coffeeGroundsContainerEmpty, setCoffeeGroundsContainerEmpty] = useState<boolean>(true);
     const [waterFlow, setWaterFlow] = useState<number>(0);
-    const [currentState, setCurrentState] = useState<string>(texts.waitState);
+    const [currentState, setCurrentState] = useState<string>(texts.state.waitState);
     const [currentStrength, setCurrentStrength] = useState<number | null>(null);
 
     const [chartData, setChartData] = useState<{ x: number; y: number }[]>(() => {
@@ -57,9 +57,10 @@ const Analytics = () => {
         return saved ? Number(saved) : 0;
     });
 
+
     // Überwache Änderungen in coffees und setze die Stärke des letzten Kaffees
     useEffect(() => {
-        if (coffees.length > 0 && currentState !== texts.waitState) {
+        if (coffees.length > 0 && currentState !== texts.state.waitState) {
             const latestCoffee = coffees[coffees.length - 1];
             setCurrentStrength(latestCoffee.strength);
         }
@@ -73,18 +74,18 @@ const Analytics = () => {
 
         if (parts.length >= 5) {
             const [zustand, temp, wasser, kaffeesatz, durchfluss] = parts;
-            const newState = zustand.trim();
+            const newState = translate(zustand.trim());
 
             // When state changes to waiting or cooling, reset strength
             if (
-                (newState === texts.waitState && currentState !== texts.waitState) ||
-                (newState === texts.coolingDownState && currentState !== texts.coolingDownState)
+                (newState === texts.state.waitState && currentState !== texts.state.waitState) ||
+                (newState === texts.state.coolingDownState && currentState !== texts.state.coolingDownState)
             ) {
                 setCurrentStrength(null);
             }
 
             // When brewing starts (from waiting to another state)
-            if (currentState === texts.waitState && newState !== texts.waitState && coffees.length > 0) {
+            if (currentState === texts.state.waitState && newState !== texts.state.waitState && coffees.length > 0) {
                 const latestCoffee = coffees[coffees.length - 1];
                 setCurrentStrength(latestCoffee.strength);
             }
@@ -122,36 +123,33 @@ const Analytics = () => {
         }
     }, [logs, currentState, coffees, texts]);
 
-
     const allStates = [
-        texts.heatingState,
-        texts.grindingState,
-        texts.pressingState,
-        texts.wettingState,
-        texts.brewingState,
-        texts.toStartPositionState,
-        texts.waitState,
-        texts.coolingDownState,
+        texts.state.heatingState,
+        texts.state.grindingState,
+        texts.state.pressingState,
+        texts.state.wettingState,
+        texts.state.brewingState,
+        texts.state.toStartPositionState,
+        texts.state.waitState,
+        texts.state.coolingDownState,
     ];
 
     // Funktion zum Abrufen des passenden Icons für jeden Zustand
     const getStateIcon = (state: string) => {
         const iconMap: Record<string, React.ComponentType<{ size?: number }>> = {
-            [texts.heatingState]: GiHeatHaze,
-            [texts.grindingState]: GiManualMeatGrinder,
-            [texts.pressingState]: MdCompress,
-            [texts.wettingState]: BsMoisture,
-            [texts.brewingState]: MdCoffeeMaker,
-            [texts.toStartPositionState]: VscDebugRestart,
-            [texts.waitState]: FiPauseCircle,
-            [texts.coolingDownState]: RiTempColdLine,
+            [texts.state.heatingState]: GiHeatHaze,
+            [texts.state.grindingState]: GiManualMeatGrinder,
+            [texts.state.pressingState]: MdCompress,
+            [texts.state.wettingState]: BsMoisture,
+            [texts.state.brewingState]: MdCoffeeMaker,
+            [texts.state.toStartPositionState]: VscDebugRestart,
+            [texts.state.waitState]: FiPauseCircle,
+            [texts.state.coolingDownState]: RiTempColdLine,
         };
 
         const IconComponent = iconMap[state];
         return IconComponent ? <IconComponent size={32} /> : null;
     };
-
-
 
     // Funktion zur Darstellung der Stärke als visuelle Balken
     const renderStrengthDisplay = () => {
