@@ -65,17 +65,41 @@ ol li::before {
     font-weight: bold;
 }
 
+.backgroundGreen {
+    background-color: #6fc86b;
+    border-radius: 14px;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+
+    opacity: 80%;
+}
+
 .waterAndCoffeeStatus {
     border-radius: 10px;
     margin-bottom: 1.5vh;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 8vh;
+    text-align: center;
 }
 
-.backgroundGreen {
-    background-color: #4FBF26 ;
+.waterAndCoffeeStatus .numbersText {
+    padding-left: 0;
+    padding-bottom: 0;
+    margin: 0;
+    font-weight: bold;
 }
 
 .backgroundRed {
-    background-color: #780808;
+    background-color: #ff2424;
+    opacity: 80%;
 }
 
 .centerText {

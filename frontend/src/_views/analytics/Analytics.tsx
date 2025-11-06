@@ -44,7 +44,7 @@ const Analytics = () => {
     const [waterLevelIsGood, setWaterLevelIsGood] = useState<boolean>(true);
     const [coffeeGroundsContainerEmpty, setCoffeeGroundsContainerEmpty] = useState<boolean>(true);
     const [waterFlow, setWaterFlow] = useState<number>(0);
-    const [currentState, setCurrentState] = useState<string>(texts.state.waitState);
+    const [currentState, setCurrentState] = useState<string>();
     const [currentStrength, setCurrentStrength] = useState<number | null>(null);
 
     const [chartData, setChartData] = useState<{ x: number; y: number }[]>(() => {
