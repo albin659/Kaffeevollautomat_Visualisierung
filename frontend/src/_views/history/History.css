@@ -2,11 +2,13 @@
 }
 
 .history-card {
-    background: #ffff;
-    padding: 15px;
-    margin-bottom: 20px;
-    border-radius: 8px;
-    border: 1px solid rgba(0, 0, 0, 0.125);
+    background-color: #ffff;
+    margin-bottom: 1.5vh;
+    border-radius: 14px;
+    padding: 1rem;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .history-table {
@@ -26,8 +28,39 @@
     font-weight: bold;
 }
 
+.info-titleHistory {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #162a4f;
+    padding-left: 0;
+    padding-top: 0;
+}
+
 p {
     font-size: 0.9rem;
     font-weight: 600;
     color: #162a4f;
+}
+
+.history-table th,
+.history-table td {
+    color: #162a4f;
+}
+
+.history-table th {
+    font-weight: 700;
+}
+
+.history-card .info-titleHistory {
+    color: #162a4f;
+}
+
+.history-table a,
+.history-table strong {
+    color: #162a4f;
+}
+
+.card-headerHistory {
+    display: flex;
+    align-items: center;
 }

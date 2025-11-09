@@ -1,6 +1,7 @@
+/* frontend/src/_views/analytics/Analytics.css */
 .outerDiv {
-  margin-left: 0.5vw;
-  margin-top: 1vh;
+    margin-left: 0.5vw;
+    margin-top: 1vh;
 }
 
 .innerDiv {
@@ -35,13 +36,13 @@
 
 
 .cornerText {
-  padding-left: 0.5vw;
-  padding-top: 0.5vh;
+    padding-left: 0.5vw;
+    padding-top: 0.5vh;
 }
 
 
 .chartStyle {
-  text-align: center;
+    text-align: center;
 }
 
 .numbersText {
@@ -100,6 +101,24 @@ ol li::before {
 .backgroundRed {
     background-color: #ff2424;
     opacity: 80%;
+}
+
+@keyframes bounceSmall {
+    0%   { transform: translateY(0); }
+    50%  { transform: translateY(-6px); }
+    100% { transform: translateY(0); }
+}
+
+.infoGrid .backgroundRed {
+    animation: bounceSmall 1.6s ease-in-out infinite;
+    will-change: transform;
+}
+
+.infoGrid > .backgroundRed:nth-of-type(1) {
+    animation-delay: 0s;
+}
+.infoGrid > .backgroundRed:nth-of-type(2) {
+    animation-delay: 0.1s;
 }
 
 .centerText {

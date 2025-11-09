@@ -33,6 +33,13 @@ const History = () => {
         };
     }, [coffees]);
 
+    const cupLabel = useMemo(() => {
+        const todayCount = statistics.todayCount;
+        if (todayCount === 1) return texts.historySingleCup;
+        if (todayCount === 0) return texts.cups;
+        return texts.cups;
+    }, [statistics.todayCount, texts]);
+
     // Formatierung für Datum und Zeit
     const formatDateTime = (dateString: string) => {
         const date = new Date(dateString);
@@ -55,15 +62,19 @@ const History = () => {
             </div>
 
             <div className="history-card">
-                <h3>{texts.historyHeader}</h3>
+                <div className="card-headerHistory">
+                    <p className="info-titleHistory">{texts.historyHeader}</p>
+                </div>
+
+
                 {coffees.length > 0 ? (
                     <table className="history-table">
                         <thead>
                         <tr>
-                            <th>Datum</th>
-                            <th>Zeit</th>
-                            <th>Art</th>
-                            <th>Stärke</th>
+                            <th>{texts.historyDateTable}</th>
+                            <th>{texts.historyTimeTable}</th>
+                            <th>{texts.historyTypeTable}</th>
+                            <th>{texts.historyStrengthTable}</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -92,10 +103,10 @@ const History = () => {
             </div>
 
             <div className="history-card">
-                <h3>{texts.historyCoffeeStatistic}</h3>
-                <p>Heute gebrüht: <strong>{statistics.todayCount}</strong> Tassen</p>
-                <p>Gesamt gebrüht: <strong>{statistics.totalCount}</strong> Tassen</p>
-                <p>Beliebteste Sorte: <strong>{statistics.mostPopularType}</strong></p>
+                <p className="info-titleHistory">{texts.historyCoffeeStatistic}</p>
+                <p>{texts.historyTodayBrews}: <strong>{statistics.todayCount}</strong> {cupLabel}</p>
+                <p>{texts.historyTotalBrews}: <strong>{statistics.totalCount}</strong> {cupLabel}</p>
+                <p>{texts.historyFavoriteType}: <strong>{statistics.mostPopularType}</strong></p>
             </div>
         </div>
     );

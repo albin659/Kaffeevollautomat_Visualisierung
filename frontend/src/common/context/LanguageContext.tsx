@@ -32,7 +32,6 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
             return text;
         }
 
-        // Falls der Wert ein State-Text (z. B. "Aufheizen") ist
         const deStates = texts['de'].state;
         const enStates = texts['en'].state;
 

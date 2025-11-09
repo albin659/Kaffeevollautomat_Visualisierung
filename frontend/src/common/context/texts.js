@@ -1,6 +1,8 @@
 // src/common/context/texts.js
 export const texts = {
     de: {
+        // MenuBar
+        menuBarLogoText: 'Kaffeevollautomat Visualisierung',
         // Navigation
         dashboard: 'Startseite',
         preparation: 'Zubereitung',
@@ -65,6 +67,14 @@ export const texts = {
         aboutHistory: 'Historie aller Zubereitungen',
         historyHeader: 'Kaffee-Verlauf',
         historyCoffeeStatistic: 'Kaffee-Statistik',
+        historyDateTable: 'Datum',
+        historyStrengthTable: 'Stärke',
+        historyTimeTable: 'Zeit',
+        historyTypeTable: 'Art',
+        historySingleCup: 'Tasse',
+        historyTodayBrews: 'Heute gebrüht',
+        historyTotalBrews: 'Gesamt gebrüht',
+        historyFavoriteType: 'Beliebteste Sorte',
 
 
         // Allgemein
@@ -72,6 +82,8 @@ export const texts = {
         at: 'an der'
     },
     en: {
+        // MenuBar
+        menuBarLogoText: 'Coffee Machine Visualization',
         // Navigation
         dashboard: 'Dashboard',
         preparation: 'Preparation',
@@ -90,7 +102,7 @@ export const texts = {
         heating: 'Heating up...',
         turnedOff: 'Turned off',
         brewedToday: 'BREWED TODAY',
-        cups: 'cups',
+        cups: 'Cups',
         totalBrewed: 'TOTAL BREWED',
         connection: 'CONNECTION',
         connected: 'Connected',
@@ -136,6 +148,14 @@ export const texts = {
         aboutHistory: 'History of all preparations',
         historyHeader: 'Coffee History',
         historyCoffeeStatistic: 'Coffee Statistics',
+        historyDateTable: 'Date',
+        historyStrengthTable: 'Strength',
+        historyTimeTable: 'Time',
+        historyTypeTable: 'Type',
+        historySingleCup: 'Cup',
+        historyTodayBrews: 'Brewed Today',
+        historyTotalBrews: 'Brewed Total',
+        historyFavoriteType: 'Favorite Type',
 
         // Allgemein
         and: 'and',

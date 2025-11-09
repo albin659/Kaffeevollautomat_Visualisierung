@@ -26,7 +26,7 @@ const MenuBar = () => {
                     onClick={() => navigate("/dashboard")}
                     className="img-fluid logo"
                 />
-                <div className="logo-text">Kaffeevollautomaten Visualisierung</div>
+                <div className="logo-text">{texts.menuBarLogoText}</div>
 
                 {/* Language Switch mit Flaggen */}
                 <div className="language-switch mt-3 d-flex align-items-center justify-content-center gap-2">

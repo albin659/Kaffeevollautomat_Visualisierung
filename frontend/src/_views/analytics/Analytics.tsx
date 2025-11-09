@@ -78,8 +78,10 @@ const Analytics = () => {
 
             // When state changes to waiting or cooling, reset strength
             if (
-                (newState === texts.state.waitState && currentState !== texts.state.waitState) ||
-                (newState === texts.state.coolingDownState && currentState !== texts.state.coolingDownState)
+                (currentState == texts.state.waitState) ||
+                (currentState == texts.state.coolingDownState) ||
+                (currentState == texts.state.heatingState) ||
+                (currentState == texts.state.toStartPositionState)
             ) {
                 setCurrentStrength(null);
             }
