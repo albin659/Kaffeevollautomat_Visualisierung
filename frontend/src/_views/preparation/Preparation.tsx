@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useWebSocket } from "../../common/context/WebSocketContext";
 import { useCoffeeContext } from "../../common/context/CoffeeContext";
+import { useLanguage } from "../../common/context/LanguageContext";
 import "./Preperation.css";
 
 // MUI Imports
@@ -24,8 +25,9 @@ import HistoryIcon from '@mui/icons-material/History';
 const Preparation = () => {
     const { send, logs, isOn, isReady, isBrewing, setIsBrewing } = useWebSocket();
     const { addCoffee, coffees } = useCoffeeContext();
+    const { texts } = useLanguage();
 
-    const [coffeeType, setCoffeeType] = useState<string>("Espresso");
+    const [coffeeType, setCoffeeType] = useState<string>(texts.espresso);
     const [amount, setAmount] = useState<number>(1);
     const [strength, setStrength] = useState<number>(3);
 
@@ -50,19 +52,19 @@ const Preparation = () => {
             setCoffeeGroundsContainerEmpty(kaffeesatz.trim() === "1");
 
             if (zustand.toLowerCase().includes("wasser leer")) {
-                showSnackbar("Wassertank ist leer! Bitte nachfüllen.", "error");
+                showSnackbar(texts.waterTankEmpty, "error");
             }
 
             if (zustand.toLowerCase().includes("kaffeesatz voll")) {
-                showSnackbar("Kaffeesatzbehälter ist voll! Bitte leeren.", "error");
+                showSnackbar(texts.groundsContainerFull, "error");
             }
 
             if (zustand.toLowerCase().includes("warten") && isBrewing) {
-                showSnackbar(`Ihr ${coffeeType} wird zubereitet! ☕ Genießen Sie!`, "success");
+                showSnackbar(texts.coffeeReady.replace('{type}', coffeeType), "success");
                 setIsBrewing(false);
             }
         }
-    }, [logs, isBrewing, coffeeType, setIsBrewing]);
+    }, [logs, isBrewing, coffeeType, setIsBrewing, texts]);
 
     const showSnackbar = (message: string, severity: "success" | "error" | "warning" | "info") => {
         setSnackbarMessage(message);
@@ -79,28 +81,28 @@ const Preparation = () => {
         console.log("🖱️ Zubereitung gestartet:", { coffeeType, amount, strength });
 
         if (!isOn) {
-            showSnackbar("Maschine ist ausgeschaltet! Bitte einschalten.", "error");
+            showSnackbar(texts.machineOffError, "error");
             return;
         }
         if (!isReady) {
-            showSnackbar("Maschine heizt noch auf – bitte warten!", "warning");
+            showSnackbar(texts.machineHeating, "warning");
             return;
         }
         if (isBrewing) {
-            showSnackbar("Die Maschine ist gerade am Brühen!", "warning");
+            showSnackbar(texts.alreadyBrewing, "warning");
             return;
         }
         if (!waterLevelIsGood) {
-            showSnackbar("Wassertank ist leer! Bitte nachfüllen.", "error");
+            showSnackbar(texts.waterTankEmpty, "error");
             return;
         }
         if (!coffeeGroundsContainerEmpty) {
-            showSnackbar("Kaffeesatzbehälter ist voll! Bitte leeren.", "error");
+            showSnackbar(texts.groundsContainerFull, "error");
             return;
         }
 
         setIsBrewing(true);
-        showSnackbar(`Ihr ${coffeeType} wird zubereitet... ☕`, "info");
+        showSnackbar(texts.brewingStarted.replace('{type}', coffeeType), "info");
 
         send("2"); // Zubereitung starten
 
@@ -109,7 +111,7 @@ const Preparation = () => {
         }, 50);
 
         setTimeout(() => {
-            const typeCode = coffeeType === "Espresso" ? "2" : "1";
+            const typeCode = coffeeType === texts.espresso ? "2" : "1";
             send(typeCode);
         }, 100);
 
@@ -129,12 +131,12 @@ const Preparation = () => {
 
     const handleFillWater = () => {
         send("3");
-        showSnackbar("Wassertank wurde aufgefüllt! 💧", "success");
+        showSnackbar(texts.waterRefilled, "success");
     };
 
     const handleEmptyGrounds = () => {
         send("4");
-        showSnackbar("Kaffeesatzbehälter wurde geleert! 🗑️", "success");
+        showSnackbar(texts.groundsEmptied, "success");
     };
 
     // Heute gebrühte Kaffees
@@ -166,8 +168,8 @@ const Preparation = () => {
             {/* Hero Header */}
             <div className="preparation-hero">
                 <div className="hero-content">
-                    <h1 className="hero-title">Zubereitung</h1>
-                    <p className="hero-subtitle"> Konfigurieren Sie Ihren perfekten Kaffee</p>
+                    <h1 className="hero-title">{texts.preparationTitle}</h1>
+                    <p className="hero-subtitle">{texts.preparationSubtitle}</p>
                 </div>
             </div>
 
@@ -176,7 +178,7 @@ const Preparation = () => {
                 <div className="config-card">
                     <div className="card-header">
                         <SettingsIcon style={{ fontSize: 24, color: "#1976d2" }} />
-                        <h2 className="card-title">Kaffee-Konfiguration</h2>
+                        <h2 className="card-title">{texts.coffeeConfiguration}</h2>
                     </div>
 
                     <form onSubmit={handleSubmit} className="config-form">
@@ -184,33 +186,33 @@ const Preparation = () => {
                         <div className="form-group">
                             <label className="form-label">
                                 <LocalCafeIcon style={{ fontSize: 20, marginRight: 8 }} />
-                                Kaffeeart
+                                {texts.coffeeType}
                             </label>
                             <div className="radio-group">
-                                <label className={`radio-card ${coffeeType === "Espresso" ? "active" : ""}`}>
+                                <label className={`radio-card ${coffeeType === texts.espresso ? "active" : ""}`}>
                                     <input
                                         type="radio"
                                         name="coffeeType"
-                                        value="Espresso"
-                                        checked={coffeeType === "Espresso"}
+                                        value={texts.espresso}
+                                        checked={coffeeType === texts.espresso}
                                         onChange={(e) => setCoffeeType(e.target.value)}
                                     />
                                     <div className="radio-content">
                                         <CoffeeIcon style={{ fontSize: 24 }} />
-                                        <span className="radio-text">Espresso</span>
+                                        <span className="radio-text">{texts.espresso}</span>
                                     </div>
                                 </label>
-                                <label className={`radio-card ${coffeeType === "Schwarz" ? "active" : ""}`}>
+                                <label className={`radio-card ${coffeeType === texts.black ? "active" : ""}`}>
                                     <input
                                         type="radio"
                                         name="coffeeType"
-                                        value="Schwarz"
-                                        checked={coffeeType === "Schwarz"}
+                                        value={texts.black}
+                                        checked={coffeeType === texts.black}
                                         onChange={(e) => setCoffeeType(e.target.value)}
                                     />
                                     <div className="radio-content">
                                         <CoffeeIcon style={{ fontSize: 24 }} />
-                                        <span className="radio-text">Schwarz</span>
+                                        <span className="radio-text">{texts.black}</span>
                                     </div>
                                 </label>
                             </div>
@@ -220,15 +222,15 @@ const Preparation = () => {
                         <div className="form-group">
                             <label className="form-label">
                                 <AddIcon style={{ fontSize: 20, marginRight: 8 }} />
-                                Anzahl
+                                {texts.amount}
                             </label>
                             <select
                                 className="form-select-modern"
                                 value={amount}
                                 onChange={(e) => setAmount(Number(e.target.value))}
                             >
-                                <option value={1}>1 Tasse</option>
-                                <option value={2}>2 Tassen</option>
+                                <option value={1}>{texts.oneCup}</option>
+                                <option value={2}>{texts.twoCups}</option>
                             </select>
                         </div>
 
@@ -236,7 +238,7 @@ const Preparation = () => {
                         <div className="form-group">
                             <label className="form-label">
                                 <BoltIcon style={{ fontSize: 20, marginRight: 8 }} />
-                                Stärke
+                                {texts.strength}
                             </label>
                             <div className="strength-selector">
                                 <input
@@ -255,7 +257,9 @@ const Preparation = () => {
                                         />
                                     ))}
                                 </div>
-                                <p className="strength-value">Stärke: {strength}/5</p>
+                                <p className="strength-value">
+                                    {texts.strengthValue.replace('{value}', strength.toString())}
+                                </p>
                             </div>
                         </div>
 
@@ -272,7 +276,7 @@ const Preparation = () => {
                                 )}
                             </span>
                             <span className="button-text">
-                                {isBrewing ? "Bereitet zu..." : "Zubereitung starten"}
+                                {isBrewing ? texts.brewingInProgress : texts.startBrewing}
                             </span>
                         </button>
                     </form>
@@ -282,7 +286,7 @@ const Preparation = () => {
                 <div className="maintenance-card">
                     <div className="card-header">
                         <BuildIcon style={{ fontSize: 24, color: "#1976d2" }} />
-                        <h2 className="card-title">Wartung</h2>
+                        <h2 className="card-title">{texts.maintenance}</h2>
                     </div>
 
                     <div className="maintenance-buttons">
@@ -296,9 +300,9 @@ const Preparation = () => {
                                 <WaterDropIcon style={{ fontSize: 24 }} />
                             </div>
                             <div className="maintenance-content">
-                                <h3 className="maintenance-title">Wassertank</h3>
+                                <h3 className="maintenance-title">{texts.waterTank}</h3>
                                 <p className="maintenance-text">
-                                    {waterLevelIsGood ? "✓ Gefüllt" : "⚠️ Leer - Befüllen!"}
+                                    {waterLevelIsGood ? texts.waterFilled : texts.waterEmpty}
                                 </p>
                             </div>
                         </button>
@@ -313,9 +317,9 @@ const Preparation = () => {
                                 <DeleteSweepIcon style={{ fontSize: 24 }} />
                             </div>
                             <div className="maintenance-content">
-                                <h3 className="maintenance-title">Kaffeesatz</h3>
+                                <h3 className="maintenance-title">{texts.coffeeGrounds}</h3>
                                 <p className="maintenance-text">
-                                    {coffeeGroundsContainerEmpty ? "✓ Leer" : "⚠️ Voll - Leeren!"}
+                                    {coffeeGroundsContainerEmpty ? texts.groundsEmpty : texts.groundsFull}
                                 </p>
                             </div>
                         </button>
@@ -327,25 +331,33 @@ const Preparation = () => {
                             <span className={`status-dot ${isOn ? "active" : ""}`}>
                                 {isOn ? <PowerIcon style={{ fontSize: 12, color: "white" }} /> : <RemoveIcon style={{ fontSize: 12, color: "white" }} />}
                             </span>
-                            <span className="status-text">Maschine: {isOn ? "An" : "Aus"}</span>
+                            <span className="status-text">
+                                {texts.machineControl}: {isOn ? texts.machineOn : texts.machineOff}
+                            </span>
                         </div>
                         <div className="status-item">
                             <span className={`status-dot ${isReady ? "active" : ""}`}>
                                 {isReady ? <CheckCircleIcon style={{ fontSize: 12, color: "white" }} /> : <ErrorIcon style={{ fontSize: 12, color: "white" }} />}
                             </span>
-                            <span className="status-text">Status: {isReady ? "Bereit" : "Nicht bereit"}</span>
+                            <span className="status-text">
+                                Status: {isReady ? texts.statusReady : texts.statusNotReady}
+                            </span>
                         </div>
                         <div className="status-item">
                             <span className={`status-dot ${waterLevelIsGood ? "active" : "error"}`}>
                                 {waterLevelIsGood ? <CheckCircleIcon style={{ fontSize: 12, color: "white" }} /> : <ErrorIcon style={{ fontSize: 12, color: "white" }} />}
                             </span>
-                            <span className="status-text">Wasser: {waterLevelIsGood ? "OK" : "Leer"}</span>
+                            <span className="status-text">
+                                {texts.waterTank}: {waterLevelIsGood ? texts.waterOK : texts.waterEmptyShort}
+                            </span>
                         </div>
                         <div className="status-item">
                             <span className={`status-dot ${coffeeGroundsContainerEmpty ? "active" : "error"}`}>
                                 {coffeeGroundsContainerEmpty ? <CheckCircleIcon style={{ fontSize: 12, color: "white" }} /> : <ErrorIcon style={{ fontSize: 12, color: "white" }} />}
                             </span>
-                            <span className="status-text">Kaffeesatz: {coffeeGroundsContainerEmpty ? "OK" : "Voll"}</span>
+                            <span className="status-text">
+                                {texts.coffeeGrounds}: {coffeeGroundsContainerEmpty ? texts.groundsOK : texts.groundsFullShort}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -355,19 +367,21 @@ const Preparation = () => {
             <div className="logs-card">
                 <div className="card-header">
                     <HistoryIcon style={{ fontSize: 24, color: "#1976d2" }} />
-                    <h2 className="card-title">Heute gebrühte Kaffees ({todaysCoffees.length})</h2>
+                    <h2 className="card-title">
+                        {texts.todayBrewedCoffees.replace('{count}', todaysCoffees.length.toString())}
+                    </h2>
                 </div>
                 <div className="logs-content">
                     {todaysCoffees.length === 0 ? (
-                        <p className="logs-empty">Noch keine Kaffees heute gebrüht...</p>
+                        <p className="logs-empty">{texts.noCoffeesYet}</p>
                     ) : (
                         <div className="table-responsive">
                             <table className="table table-striped table-hover">
                                 <thead className="table-light">
                                 <tr>
-                                    <th scope="col">Zeit</th>
-                                    <th scope="col">Typ</th>
-                                    <th scope="col">Stärke</th>
+                                    <th scope="col">{texts.time}</th>
+                                    <th scope="col">{texts.type}</th>
+                                    <th scope="col">{texts.strength}</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -381,9 +395,9 @@ const Preparation = () => {
                                             })}
                                         </td>
                                         <td>
-                                                <span className={`badge ${coffee.type === 'Espresso' ? 'bg-primary' : 'bg-dark'}`}>
-                                                    {coffee.type}
-                                                </span>
+                                            <span className={`badge ${coffee.type === texts.espresso ? 'bg-primary' : 'bg-dark'}`}>
+                                                {coffee.type}
+                                            </span>
                                         </td>
                                         <td>
                                             <div className="d-flex align-items-center">

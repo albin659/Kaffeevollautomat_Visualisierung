@@ -1,6 +1,5 @@
-// src/common/context/LanguageContext.js
 import React, { createContext, ReactNode, useContext, useState } from 'react';
-import { texts } from './texts';
+import { texts } from '../data/texts';
 
 type Language = 'de' | 'en';
 

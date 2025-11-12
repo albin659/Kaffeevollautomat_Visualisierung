@@ -1,6 +1,7 @@
 import React from "react";
 import { Button, Card } from "react-bootstrap";
 import { useCoffeeContext } from "../../common/context/CoffeeContext";
+import { useLanguage } from "../../common/context/LanguageContext";
 import "./Report.css";
 
 // MUI Icons importieren
@@ -21,8 +22,8 @@ const getDateString = () => {
 };
 
 // CSV Export
-const exportCSV = (data: any[], filenamePrefix: string) => {
-    const header = ["ID", "Kaffee Typ", "Stärke", "Datum"];
+const exportCSV = (data: any[], filenamePrefix: string, headerLabels: string[]) => {
+    const header = headerLabels;
     const rows = data.map((c) => [c.id, c.type, c.strength, c.createdDate]);
     const csvContent =
         "data:text/csv;charset=utf-8," +
@@ -57,14 +58,27 @@ const getWeekData = (data: any[]) => {
 
 const Report: React.FC = () => {
     const { coffees } = useCoffeeContext();
+    const { texts } = useLanguage();
 
     const handleExportAll = () => {
-        exportCSV(coffees, "coffee_report_all");
+        const headerLabels = [
+            texts.csvHeaderId,
+            texts.csvHeaderType,
+            texts.csvHeaderStrength,
+            texts.csvHeaderDate
+        ];
+        exportCSV(coffees, "coffee_report_all", headerLabels);
     };
 
     const handleExportWeek = () => {
         const weekData = getWeekData(coffees);
-        exportCSV(weekData, "coffee_report_week");
+        const headerLabels = [
+            texts.csvHeaderId,
+            texts.csvHeaderType,
+            texts.csvHeaderStrength,
+            texts.csvHeaderDate
+        ];
+        exportCSV(weekData, "coffee_report_week", headerLabels);
     };
 
     return (
@@ -72,8 +86,8 @@ const Report: React.FC = () => {
             {/* Hero Header */}
             <div className="dashboard-hero">
                 <div className="hero-content">
-                    <h1 className="hero-title">Berichte & Export</h1>
-                    <p className="hero-subtitle">Kaffeedaten exportieren und analysieren</p>
+                    <h1 className="hero-title">{texts.reportTitle}</h1>
+                    <p className="hero-subtitle">{texts.reportSubtitle}</p>
                 </div>
             </div>
 
@@ -86,7 +100,7 @@ const Report: React.FC = () => {
                         </div>
                     </div>
                     <div className="status-card-body">
-                        <p className="status-label">GESAMTE DATENSÄTZE</p>
+                        <p className="status-label">{texts.totalRecords}</p>
                         <h3 className="status-value">{coffees.length}</h3>
                     </div>
                 </div>
@@ -98,7 +112,7 @@ const Report: React.FC = () => {
                         </div>
                     </div>
                     <div className="status-card-body">
-                        <p className="status-label">DIESE WOCHE</p>
+                        <p className="status-label">{texts.thisWeek}</p>
                         <h3 className="status-value">{getWeekData(coffees).length}</h3>
                     </div>
                 </div>
@@ -109,11 +123,10 @@ const Report: React.FC = () => {
                 <div className="info-card-modern">
                     <div className="info-header">
                         <AnalyticsIcon style={{ fontSize: 24, color: "#1976d2" }} />
-                        <h3 className="info-title">Kompletter Datenexport</h3>
+                        <h3 className="info-title">{texts.completeDataExport}</h3>
                     </div>
                     <p className="info-text">
-                        Exportieren Sie alle gesammelten Kaffeedaten in einer CSV-Datei.
-                        Enthält alle bisher aufgezeichneten Brühvorgänge mit Typ, Stärke und Zeitstempel.
+                        {texts.completeDataExportDescription}
                     </p>
                     <div className="status-card-footer" style={{marginTop: '1rem', height: '2px'}}>
                         <div className="status-indicator" style={{backgroundColor: '#162a4f', width: '100%'}}></div>
@@ -126,18 +139,19 @@ const Report: React.FC = () => {
                         <span className="button-icon">
                             <DownloadIcon style={{ fontSize: 20 }} />
                         </span>
-                        <span className="button-text">Alle Daten exportieren ({coffees.length} Datensätze)</span>
+                        <span className="button-text">
+                            {texts.exportAllData.replace('{count}', coffees.length.toString())}
+                        </span>
                     </Button>
                 </div>
 
                 <div className="info-card-modern">
                     <div className="info-header">
                         <CalendarTodayIcon style={{ fontSize: 24, color: "#1976d2" }} />
-                        <h3 className="info-title">Wochenexport</h3>
+                        <h3 className="info-title">{texts.weekExport}</h3>
                     </div>
                     <p className="info-text">
-                        Exportieren Sie nur die Kaffeedaten der aktuellen Woche (Montag bis Sonntag).
-                        Ideal für wöchentliche Auswertungen und Berichte.
+                        {texts.weekExportDescription}
                     </p>
                     <div className="status-card-footer" style={{marginTop: '1rem', height: '2px'}}>
                         <div className="status-indicator" style={{backgroundColor: '#28a745', width: '100%'}}></div>
@@ -150,7 +164,9 @@ const Report: React.FC = () => {
                         <span className="button-icon">
                             <DownloadIcon style={{ fontSize: 20 }} />
                         </span>
-                        <span className="button-text">Wochendaten exportieren ({getWeekData(coffees).length} Datensätze)</span>
+                        <span className="button-text">
+                            {texts.exportWeekData.replace('{count}', getWeekData(coffees).length.toString())}
+                        </span>
                     </Button>
                 </div>
             </div>
