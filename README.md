@@ -27,8 +27,9 @@ Das Projekt dient als Grundlage für die spätere Integration der echten Maschin
              │ Live-Daten über WebSockets
              ▼
 ┌──────────────────────────┐
-│     Visualisierung       │
-│  → Frontend / Dashboard  │
+│        Frontend          │
+│  → Visualisierung        |
+|  → Dashboard             │
 └──────────────────────────┘
 ```
 
@@ -147,35 +148,6 @@ Aufheizen,90,1,1,0,12.11.2025
 Brühen,94,1,1,5,12.11.2025
 Warten,94,1,1,0,12.11.2025
 ```
-
----
-
-## Integration (Maschinenanbindung)
-
-Damit diese Integration problemlos funktioniert:
-
-1. **Verbindung zur gleichen MongoDB herstellen**
-   ```python
-   from pymongo import MongoClient
-   client = MongoClient("mongodb://localhost:27017/")
-   db = client["Kaffeemaschine"]
-   ```
-
-2. **Echte Messwerte in die bestehenden Collections schreiben**
-   ```python
-   db["Aufheizen"].insert_one({
-       "step_type": "Aufheizen",
-       "temperature": 85,
-       "water_ok": True,
-       "grounds_ok": True,
-       "water_flow": 0
-   })
-   ```
-
-3. **Visualisierung starten**  
-   → Diese liest automatisch die aktualisierten (realen) Daten aus der Datenbank.
-
-Damit funktioniert die Visualisierung **ohne Codeänderung am Frontend**.
 
 ---
 
