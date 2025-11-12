@@ -1,4 +1,4 @@
-# ☕ Kaffeemaschine – Visualisierung & Backend
+# Kaffeemaschine – Visualisierung & Backend
 
 Dieses Projekt simuliert die Daten einer Kaffeemaschine und stellt sie über eine Visualisierung dar.  
 Die Kommunikation zwischen Backend und Frontend erfolgt über **WebSockets**.  
@@ -8,7 +8,7 @@ Das Projekt dient als Grundlage für die spätere Integration der echten Maschin
 
 ---
 
-## 📦 Architekturüberblick
+## Architekturüberblick
 
 ```
 ┌──────────────────────────┐
