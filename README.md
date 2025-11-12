@@ -13,7 +13,7 @@ Das Projekt dient als Grundlage für die spätere Integration der echten Maschin
 ```
 ┌──────────────────────────┐
 │   Physische Maschine     │
-│ (wird später angebunden) │
+│                          │
 └────────────┬─────────────┘
              │
              │ Anbindung
@@ -34,7 +34,13 @@ Das Projekt dient als Grundlage für die spätere Integration der echten Maschin
 
 ---
 
-## ⚙️ Voraussetzungen
+## Verwendete Technologien
+
+ - Backend:   Python
+ - Frontend:  React
+ - Datenbank: MongoDB
+
+## Voraussetzungen
 
 - **Python 3.9+**
 - **MongoDB Server** (lokal oder in Docker)
@@ -45,7 +51,7 @@ Das Projekt dient als Grundlage für die spätere Integration der echten Maschin
 
 ---
 
-## 💾 Datenbankstruktur
+## Datenbankstruktur
 
 - **Datenbankname:** `Kaffeemaschine`
 - **Collections (Tabellen):**
@@ -74,7 +80,7 @@ Das Projekt dient als Grundlage für die spätere Integration der echten Maschin
 
 ---
 
-## 🧠 Backend – Übersicht
+## Backend – Übersicht
 
 Das Backend (siehe `BackendWithWebSocketAndDatabase.py`) stellt die Verbindung zur Datenbank her, simuliert die Kaffeemaschine anhand der Demo-Daten und sendet die Zustände in Echtzeit über WebSockets an die Visualisierung.
 
@@ -91,7 +97,7 @@ MongoDB Verbindung erfolgreich
 
 ---
 
-## 🔗 Verbindung zur MongoDB
+## Verbindung zur MongoDB
 
 Das Backend nutzt `motor` (eine asynchrone MongoDB-Bibliothek):
 
@@ -107,7 +113,7 @@ Wenn die echte Maschine später Daten liefert, kann sie **denselben Aufbau** ver
 
 ---
 
-## ☕ Wie die Simulation funktioniert
+## Wie die Simulation funktioniert
 
 Die Klasse `MachineState` speichert den aktuellen Zustand der Kaffeemaschine (Temperatur, Wasserstand, Kaffeesatz usw.).  
 Die Simulation läuft anhand von Prozess-Schritten, die jeweils Daten aus der MongoDB auslesen.
@@ -124,7 +130,7 @@ Jeder Schritt wird zeitverzögert (mit `asyncio.sleep(1)`) simuliert, um den ech
 
 ---
 
-## 📡 Kommunikation über WebSocket
+## Kommunikation über WebSocket
 
 - Der WebSocket-Server läuft auf:  
   **`ws://localhost:8765`**
@@ -173,7 +179,7 @@ Damit funktioniert die Visualisierung **ohne Codeänderung am Frontend**.
 
 ---
 
-## 🧹 Datenverwaltung in MongoDB
+## Datenverwaltung in MongoDB
 
 - **Alle Testdaten löschen:**
   ```python
@@ -190,7 +196,7 @@ Damit funktioniert die Visualisierung **ohne Codeänderung am Frontend**.
   ```
 
 
-## 📘 Zusammenfassung
+## Zusammenfassung
 
 - Die Visualisierung zeigt **Daten aus MongoDB** an.
 - Das Backend simuliert den **kompletten Kaffeeprozess** (Aufheizen, Brühen, Abkühlen usw.).
@@ -199,14 +205,14 @@ Damit funktioniert die Visualisierung **ohne Codeänderung am Frontend**.
 
 ---
 
-## 📁 Repository
+## Repository
 
 GitHub-Link:  
 👉 [https://github.com/albin659/Kaffeevollautomat_Visualisierung]
 
 ---
 
-## 📞 Kontakt
+## Kontakt
 
 Bei Fragen zur Datenstruktur oder zur Visualisierung bitte die Entwickler:innen der Visualisierungsklasse kontaktieren.
  - Albin Bajrami
