@@ -64,3 +64,66 @@ p {
     display: flex;
     align-items: center;
 }
+/* Slide-up Effekt */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.history-container {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* History-Karten */
+.history-card {
+    background-color: #fff;
+    margin-bottom: 1.5vh;
+    border-radius: 14px;
+    padding: 1rem;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: fadeInUp 0.5s ease-in-out both;
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.history-table th,
+.history-table td {
+    border-bottom: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+    color: #162a4f;
+}
+
+.history-table th {
+    font-weight: 700;
+}
+
+.history-card .info-titleHistory {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #162a4f;
+    padding-left: 0;
+    padding-top: 0;
+}
+
+.history-table a,
+.history-table strong {
+    color: #162a4f;
+}
+
+.card-headerHistory {
+    display: flex;
+    align-items: center;
+}
