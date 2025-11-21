@@ -138,9 +138,6 @@ async def cool_down_machine_from_db(send, websocket=None):
         await heat_up_machine_from_db(send)
 
 async def execute_coffee_step(step_name: str, coffee_type: str, amount: int, send):
-    """
-    Führt einen einzelnen Kaffee-Schritt aus
-    """
     step_data = await get_coffee_step_data(step_name, coffee_type, amount)
     
     if not step_data:
