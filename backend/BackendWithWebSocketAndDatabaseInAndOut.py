@@ -2,12 +2,13 @@ import asyncio
 import websockets
 from datetime import date, datetime
 from motor.motor_asyncio import AsyncIOMotorClient
-import os
+import json
 
 DATABASE_URL = "mongodb://localhost:27017"
 client = AsyncIOMotorClient(DATABASE_URL)
 database = client.Kaffeemaschine
 status_collection = database.Status
+coffee_history_collection = database.CoffeeHistory
 
 connected_clients = set()
 machine_state = {
@@ -28,6 +29,16 @@ async def get_current_status():
             return status_copy
     except Exception as e:
         return None
+
+async def get_coffee_history():
+    try:
+        history = await coffee_history_collection.find().to_list(length=100)
+        for item in history:
+            if '_id' in item:
+                item['_id'] = str(item['_id'])
+        return history
+    except Exception as e:
+        return []
 
 async def status_to_csv(status):
     if not status:
@@ -81,11 +92,30 @@ async def send_current_status(websocket):
     except Exception as e:
         pass
 
+async def send_coffee_history(websocket):
+    try:
+        history = await get_coffee_history()
+        response = {
+            "type": "coffee_history",
+            "data": history
+        }
+        await websocket.send(json.dumps(response))
+    except Exception as e:
+        pass
+
 async def update_status_in_db(status_data):
     try:
         status_data['last_updated'] = datetime.now()
         await status_collection.delete_many({})
         await status_collection.insert_one(status_data)
+        return True
+    except Exception as e:
+        return False
+
+async def save_coffee_to_history(coffee_data):
+    try:
+        coffee_data['createdDate'] = datetime.now()
+        await coffee_history_collection.insert_one(coffee_data)
         return True
     except Exception as e:
         return False
@@ -326,7 +356,7 @@ coffee_types = {
     "2": {"name": "Espresso", "grinding_steps": 6, "press_steps": 5, "moisting_steps": 2, "brewing_steps": 14, "toStart_steps": 4}
 }
 
-async def handle_command(option):
+async def handle_command(option, websocket=None):
     machine_state["last_activity"] = datetime.now()
     
     if option == "1":
@@ -344,6 +374,10 @@ async def handle_command(option):
     elif option == "5":
         asyncio.create_task(simulate_cooling())
         return "ready"
+    elif option == "6":
+        if websocket:
+            await send_coffee_history(websocket)
+        return "ready"
     else:
         current_status = await get_current_status()
         powered_on = current_status.get('powered_on', True) if current_status else True
@@ -358,6 +392,16 @@ async def echo(websocket):
     try:
         async for message in websocket:
             machine_state["last_activity"] = datetime.now()
+            
+            if message.startswith('{'):
+                try:
+                    coffee_data = json.loads(message)
+                    
+                    if all(key in coffee_data for key in ['id', 'type', 'strength', 'createdDate']):
+                        await save_coffee_to_history(coffee_data)
+                    continue
+                except json.JSONDecodeError:
+                    pass
             
             if machine_state["current_state"] in ["ready", "await_amount", "await_coffee_choice"]:
                 if machine_state["current_state"] == "await_amount":
@@ -376,11 +420,11 @@ async def echo(websocket):
                         )
                         machine_state["current_state"] = "ready"
                     else:
-                        machine_state["current_state"] = await handle_command(message)
+                        machine_state["current_state"] = await handle_command(message, websocket)
                     continue
                 
                 if machine_state["current_state"] == "ready":
-                    machine_state["current_state"] = await handle_command(message)
+                    machine_state["current_state"] = await handle_command(message, websocket)
     
     except websockets.exceptions.ConnectionClosed:
         pass
