@@ -33,9 +33,13 @@ async def get_current_status():
 async def get_coffee_history():
     try:
         history = await coffee_history_collection.find().to_list(length=100)
+        
         for item in history:
             if '_id' in item:
                 item['_id'] = str(item['_id'])
+            if 'createdDate' in item and isinstance(item['createdDate'], datetime):
+                item['createdDate'] = item['createdDate'].isoformat()
+        
         return history
     except Exception as e:
         return []
@@ -92,14 +96,27 @@ async def send_current_status(websocket):
     except Exception as e:
         pass
 
-async def send_coffee_history(websocket):
+async def send_coffee_history_to_all():
+    if not connected_clients:
+        return
+    
     try:
         history = await get_coffee_history()
+        
         response = {
             "type": "coffee_history",
             "data": history
         }
-        await websocket.send(json.dumps(response))
+        message = json.dumps(response, default=str)
+        
+        disconnected = set()
+        for websocket in connected_clients:
+            try:
+                await websocket.send(message)
+            except:
+                disconnected.add(websocket)
+        
+        connected_clients.difference_update(disconnected)
     except Exception as e:
         pass
 
@@ -114,7 +131,14 @@ async def update_status_in_db(status_data):
 
 async def save_coffee_to_history(coffee_data):
     try:
-        coffee_data['createdDate'] = datetime.now()
+        if 'createdDate' in coffee_data and isinstance(coffee_data['createdDate'], str):
+            try:
+                coffee_data['createdDate'] = datetime.fromisoformat(coffee_data['createdDate'].replace('Z', '+00:00'))
+            except:
+                coffee_data['createdDate'] = datetime.now()
+        else:
+            coffee_data['createdDate'] = datetime.now()
+            
         await coffee_history_collection.insert_one(coffee_data)
         return True
     except Exception as e:
@@ -375,8 +399,7 @@ async def handle_command(option, websocket=None):
         asyncio.create_task(simulate_cooling())
         return "ready"
     elif option == "6":
-        if websocket:
-            await send_coffee_history(websocket)
+        await send_coffee_history_to_all()
         return "ready"
     else:
         current_status = await get_current_status()
