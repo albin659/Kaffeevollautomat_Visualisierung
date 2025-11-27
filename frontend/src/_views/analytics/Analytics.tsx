@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from "react";
 import "./Analytics.css";
 import { useWebSocket } from "../../common/context/WebSocketContext";
-import { useCoffeeContext } from "../../common/context/CoffeeContext";
+import { useLanguage } from "../../common/context/LanguageContext";
 
 import { GiHeatHaze, GiManualMeatGrinder } from "react-icons/gi";
 import { MdCompress, MdCoffeeMaker } from "react-icons/md";
@@ -23,7 +23,6 @@ import {
     Tooltip,
     Legend,
 } from "chart.js";
-import {useLanguage} from "../../common/context/LanguageContext";
 
 ChartJS.register(
     CategoryScale,
@@ -36,8 +35,7 @@ ChartJS.register(
 );
 
 const Analytics = () => {
-    const { logs } = useWebSocket();
-    const { coffees } = useCoffeeContext();
+    const { logs, coffeeHistory } = useWebSocket();
     const { texts, translate } = useLanguage();
 
     const [temperature, setTemperature] = useState<number>(0);
@@ -58,13 +56,12 @@ const Analytics = () => {
     });
 
 
-    // Überwache Änderungen in coffees und setze die Stärke des letzten Kaffees
     useEffect(() => {
-        if (coffees.length > 0 && currentState !== texts.state.waitState) {
-            const latestCoffee = coffees[coffees.length - 1];
+        if (coffeeHistory.length > 0 && currentState !== texts.state.waitState) {
+            const latestCoffee = coffeeHistory[coffeeHistory.length - 1];
             setCurrentStrength(latestCoffee.strength);
         }
-    }, [coffees, currentState]);
+    }, [coffeeHistory, currentState, texts.state.waitState]);
 
     useEffect(() => {
         if (logs.length === 0) return;
@@ -87,8 +84,8 @@ const Analytics = () => {
             }
 
             // When brewing starts (from waiting to another state)
-            if (currentState === texts.state.waitState && newState !== texts.state.waitState && coffees.length > 0) {
-                const latestCoffee = coffees[coffees.length - 1];
+            if (currentState === texts.state.waitState && newState !== texts.state.waitState && coffeeHistory.length > 0) {
+                const latestCoffee = coffeeHistory[coffeeHistory.length - 1];
                 setCurrentStrength(latestCoffee.strength);
             }
 
@@ -123,7 +120,7 @@ const Analytics = () => {
                 return next;
             });
         }
-    }, [logs, currentState, coffees, texts]);
+    }, [logs, currentState, coffeeHistory, texts, translate]);
 
     const allStates = [
         texts.state.heatingState,

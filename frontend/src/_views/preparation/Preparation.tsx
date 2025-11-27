@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useWebSocket } from "../../common/context/WebSocketContext";
-import { useCoffeeContext } from "../../common/context/CoffeeContext";
 import { useLanguage } from "../../common/context/LanguageContext";
 import "./Preperation.css";
 
@@ -23,8 +22,7 @@ import BoltIcon from '@mui/icons-material/Bolt';
 import HistoryIcon from '@mui/icons-material/History';
 
 const Preparation = () => {
-    const { send, logs, isOn, isReady, isBrewing, setIsBrewing } = useWebSocket();
-    const { addCoffee, coffees } = useCoffeeContext();
+    const { send, logs, isOn, isReady, isBrewing, setIsBrewing, coffeeHistory, addCoffeeToHistory } = useWebSocket();
     const { texts } = useLanguage();
 
     const [coffeeType, setCoffeeType] = useState<string>(texts.espresso);
@@ -115,11 +113,11 @@ const Preparation = () => {
             send(typeCode);
         }, 100);
 
-        // Kaffees im Context speichern
+        // Kaffees zur History hinzufügen (wird ans Backend gesendet)
         setTimeout(() => {
             const now = new Date().toISOString();
             for (let i = 0; i < amount; i++) {
-                addCoffee({
+                addCoffeeToHistory({
                     id: Date.now() + i,
                     type: coffeeType,
                     strength,
@@ -139,8 +137,8 @@ const Preparation = () => {
         showSnackbar(texts.groundsEmptied, "success");
     };
 
-    // Heute gebrühte Kaffees
-    const todaysCoffees = coffees.filter(coffee => {
+    // Heute gebrühte Kaffees aus Backend-History
+    const todaysCoffees = coffeeHistory.filter(coffee => {
         const coffeeDate = new Date(coffee.createdDate).toDateString();
         const today = new Date().toDateString();
         return coffeeDate === today;

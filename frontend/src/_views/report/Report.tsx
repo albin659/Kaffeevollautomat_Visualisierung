@@ -1,6 +1,6 @@
 import React from "react";
 import { Button, Card } from "react-bootstrap";
-import { useCoffeeContext } from "../../common/context/CoffeeContext";
+import { useWebSocket } from "../../common/context/WebSocketContext";
 import { useLanguage } from "../../common/context/LanguageContext";
 import "./Report.css";
 
@@ -57,7 +57,7 @@ const getWeekData = (data: any[]) => {
 };
 
 const Report: React.FC = () => {
-    const { coffees } = useCoffeeContext();
+    const { coffeeHistory } = useWebSocket();
     const { texts } = useLanguage();
 
     const handleExportAll = () => {
@@ -67,11 +67,11 @@ const Report: React.FC = () => {
             texts.csvHeaderStrength,
             texts.csvHeaderDate
         ];
-        exportCSV(coffees, "coffee_report_all", headerLabels);
+        exportCSV(coffeeHistory, "coffee_report_all", headerLabels);
     };
 
     const handleExportWeek = () => {
-        const weekData = getWeekData(coffees);
+        const weekData = getWeekData(coffeeHistory);
         const headerLabels = [
             texts.csvHeaderId,
             texts.csvHeaderType,
@@ -101,7 +101,7 @@ const Report: React.FC = () => {
                     </div>
                     <div className="status-card-body">
                         <p className="status-label">{texts.totalRecords}</p>
-                        <h3 className="status-value">{coffees.length}</h3>
+                        <h3 className="status-value">{coffeeHistory.length}</h3>
                     </div>
                 </div>
 
@@ -113,7 +113,7 @@ const Report: React.FC = () => {
                     </div>
                     <div className="status-card-body">
                         <p className="status-label">{texts.thisWeek}</p>
-                        <h3 className="status-value">{getWeekData(coffees).length}</h3>
+                        <h3 className="status-value">{getWeekData(coffeeHistory).length}</h3>
                     </div>
                 </div>
             </div>
@@ -140,7 +140,7 @@ const Report: React.FC = () => {
                             <DownloadIcon style={{ fontSize: 20 }} />
                         </span>
                         <span className="button-text">
-                            {texts.exportAllData.replace('{count}', coffees.length.toString())}
+                            {texts.exportAllData.replace('{count}', coffeeHistory.length.toString())}
                         </span>
                     </Button>
                 </div>
@@ -165,7 +165,7 @@ const Report: React.FC = () => {
                             <DownloadIcon style={{ fontSize: 20 }} />
                         </span>
                         <span className="button-text">
-                            {texts.exportWeekData.replace('{count}', getWeekData(coffees).length.toString())}
+                            {texts.exportWeekData.replace('{count}', getWeekData(coffeeHistory).length.toString())}
                         </span>
                     </Button>
                 </div>

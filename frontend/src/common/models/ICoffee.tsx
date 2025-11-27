@@ -1,4 +1,4 @@
-export interface ICoffee {
+export interface CoffeeEntry {
     id: number;
     type: string;
     strength: number;

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useWebSocket } from "../../common/context/WebSocketContext";
-import { useCoffeeContext } from "../../common/context/CoffeeContext";
 import { useLanguage } from "../../common/context/LanguageContext";
 import "./Dashboard.css";
 
@@ -16,8 +15,7 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 
 const Dashboard = () => {
-    const { send, isConnected, logs, isOn, setIsOn, setIsReady, isReady, isBrewing } = useWebSocket();
-    const { coffees } = useCoffeeContext();
+    const { send, isConnected, logs, isOn, setIsOn, setIsReady, isReady, isBrewing, coffeeHistory } = useWebSocket();
     const { texts } = useLanguage();
     const [initialized, setInitialized] = useState(false);
 
@@ -48,7 +46,7 @@ const Dashboard = () => {
         }
     };
 
-    const todaysCoffees = coffees.filter(coffee => {
+    const todaysCoffees = coffeeHistory.filter(coffee => {
         const coffeeDate = new Date(coffee.createdDate).toDateString();
         const today = new Date().toDateString();
         return coffeeDate === today;
@@ -128,7 +126,7 @@ const Dashboard = () => {
                     </div>
                     <div className="status-card-body">
                         <p className="status-label">{texts.totalBrewed}</p>
-                        <h3 className="status-value">{coffees.length} {texts.cups}</h3>
+                        <h3 className="status-value">{coffeeHistory.length} {texts.cups}</h3>
                     </div>
                 </div>
 
@@ -195,7 +193,7 @@ const Dashboard = () => {
                         <span className="tech-badge">React + TypeScript</span>
                         <span className="tech-badge">WebSocket</span>
                         <span className="tech-badge">Raspberry Pi</span>
-                        <span className="tech-badge">Python Flask</span>
+                        <span className="tech-badge">Python + MongoDB</span>
                         <span className="tech-badge">Chart.js</span>
                     </div>
                 </div>

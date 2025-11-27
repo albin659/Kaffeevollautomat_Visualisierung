@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext, useState, useEffect } from "react";
+/*import { createContext, ReactNode, useContext } from "react";
 
 export interface CoffeeEntry {
     id: number;
@@ -19,44 +19,23 @@ interface CoffeeProviderProps {
     children: ReactNode;
 }
 
-const STORAGE_KEY = "kaffeemaschine_coffees";
 
-export const CoffeeProvider: React.FC<CoffeeProviderProps> = ({ children }) => {
-    // Initialisiere mit Daten aus localStorage
-    const [coffees, setCoffees] = useState<CoffeeEntry[]>(() => {
-        try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored) {
-                return JSON.parse(stored);
-            }
-        } catch (error) {
-            console.error("Fehler beim Laden der Kaffee-Daten:", error);
-        }
-        return [];
-    });
+ */
+// HINWEIS: Dieser Context wird nicht mehr benötigt, da die History
+// jetzt direkt vom Backend über WebSocketContext kommt.
 
-    // Speichere in localStorage bei jeder Änderung
-    useEffect(() => {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(coffees));
-        } catch (error) {
-            console.error("Fehler beim Speichern der Kaffee-Daten:", error);
-        }
-    }, [coffees]);
-
+/*export const CoffeeProvider: React.FC<CoffeeProviderProps> = ({ children }) => {
+    // Leerer Provider - alle Daten kommen vom WebSocketContext
     const addCoffee = (entry: CoffeeEntry) => {
-        setCoffees((prev) => [...prev, entry]);
-        console.log("☕ Kaffee hinzugefügt:", entry);
+        console.log("⚠️ CoffeeContext.addCoffee ist deprecated - nutze WebSocketContext.addCoffeeToHistory");
     };
 
     const clearCoffees = () => {
-        setCoffees([]);
-        localStorage.removeItem(STORAGE_KEY);
-        console.log("🗑️ Alle Kaffee-Daten gelöscht");
+        console.log("⚠️ CoffeeContext.clearCoffees ist deprecated");
     };
 
     return (
-        <CoffeeContext.Provider value={{ coffees, addCoffee, clearCoffees }}>
+        <CoffeeContext.Provider value={{ coffees: [], addCoffee, clearCoffees }}>
             {children}
         </CoffeeContext.Provider>
     );
@@ -69,3 +48,5 @@ export const useCoffeeContext = (): CoffeeContextType => {
     }
     return context;
 };
+
+ */

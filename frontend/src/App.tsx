@@ -9,7 +9,7 @@ import Analytics from "./_views/analytics/Analytics";
 import History from "./_views/history/History";
 import Report from "./_views/report/Report";
 import {WebSocketProvider} from "./common/context/WebSocketContext";
-import {CoffeeProvider} from "./common/context/CoffeeContext";
+//import {CoffeeProvider} from "./common/context/CoffeeContext";
 import {LanguageProvider} from "./common/context/LanguageContext";
 
 
@@ -17,7 +17,7 @@ function App() {
     return (
         <BrowserRouter>
             <WebSocketProvider>
-                <CoffeeProvider>
+                {/*<CoffeeProvider>*/}
                     <LanguageProvider>
                 <Routes>
                     <Route path="/" element={<Layout />}>
@@ -30,7 +30,7 @@ function App() {
                     </Route>
                 </Routes>
                     </LanguageProvider>
-                </CoffeeProvider>
+                {/*</CoffeeProvider>*/}
             </WebSocketProvider>
         </BrowserRouter>
     );
