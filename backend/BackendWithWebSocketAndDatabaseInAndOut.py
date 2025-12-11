@@ -21,13 +21,18 @@ machine_state = {
 
 async def get_current_status():
     try:
-        current_status = await status_collection.find_one()
+        current_status = await status_collection.find_one(
+            sort=[("last_updated", -1)]  
+        )
+        
         if current_status:
             status_copy = current_status.copy()
             if '_id' in status_copy:
                 status_copy['_id'] = str(status_copy['_id'])
             return status_copy
+        return None
     except Exception as e:
+        print(f"Error getting current status: {e}")
         return None
 
 async def get_coffee_history():
@@ -42,6 +47,7 @@ async def get_coffee_history():
         
         return history
     except Exception as e:
+        print(f"Error getting coffee history: {e}")
         return []
 
 async def status_to_json(status):
@@ -130,8 +136,17 @@ async def send_coffee_history_to_all():
 async def update_status_in_db(status_data):
     try:
         status_data['last_updated'] = datetime.now()
-        await status_collection.delete_many({})
-        await status_collection.insert_one(status_data)
+        
+        existing_status = await status_collection.find_one()
+        
+        if existing_status:
+            await status_collection.update_one(
+                {"_id": existing_status["_id"]},
+                {"$set": status_data}
+            )
+        else:
+            await status_collection.insert_one(status_data)
+        
         return True
     except Exception as e:
         print(f"Error updating status in DB: {e}")
@@ -464,29 +479,37 @@ async def echo(websocket):
     finally:
         connected_clients.remove(websocket)
 
-async def initialize_status_once():
-    initial_status = {
-        "temperature": 22,
-        "water_ok": True,
-        "grounds_ok": True,
-        "cups_since_empty": 0,
-        "cups_since_filled": 0,
-        "water_flow": 0,
-        "powered_on": False,
-        "current_step": "Warten",
-        "last_updated": datetime.now(),
-        "current_date": date.today().strftime('%d.%m.%Y')
-    }
-    await update_status_in_db(initial_status)
-    machine_state["last_activity"] = datetime.now()
-    machine_state["is_processing"] = False
-    machine_state["current_state"] = "ready"
-    machine_state["current_task"] = None
+async def initialize_status():
+    try:
+        initial_status = {
+            "temperature": 22,
+            "water_ok": True,
+            "grounds_ok": True,
+            "cups_since_empty": 0,
+            "cups_since_filled": 0,
+            "water_flow": 0,
+            "powered_on": False,
+            "current_step": "Warten",
+            "last_updated": datetime.now(),
+            "current_date": date.today().strftime('%d.%m.%Y')
+        }
+        
+        await update_status_in_db(initial_status)
+        
+        machine_state["last_activity"] = datetime.now()
+        machine_state["is_processing"] = False
+        machine_state["current_state"] = "ready"
+        machine_state["current_task"] = None
+        
+        return True
+    except Exception as e:
+        print(f"Error in initialize_status: {e}")
+        return False
 
 async def main():
     try:
         await database.command('ping')
-        await initialize_status_once()
+        await initialize_status()
         
         asyncio.create_task(check_auto_standby())
         asyncio.create_task(continuous_warten_broadcast())
