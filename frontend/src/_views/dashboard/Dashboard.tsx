@@ -3,7 +3,6 @@ import { useWebSocket } from "../../common/context/WebSocketContext";
 import { useLanguage } from "../../common/context/LanguageContext";
 import "./Dashboard.css";
 
-// Material-UI Icons importieren
 import CoffeeIcon from '@mui/icons-material/Coffee';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
@@ -15,32 +14,33 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 
 const Dashboard = () => {
-    const { send, isConnected, logs, isOn, setIsOn, setIsReady, isReady, isBrewing, coffeeHistory } = useWebSocket();
+    const { send, isConnected, isOn, setIsOn, setIsReady, isReady, isBrewing, coffeeHistory } = useWebSocket();
     const { texts } = useLanguage();
     const [initialized, setInitialized] = useState(false);
 
     useEffect(() => {
         if (isConnected && !initialized) {
-            send("status");
+            // Fordere initialen Status an (beliebiger Command triggert Status-Broadcast)
+            send("History");
             setInitialized(true);
         }
     }, [isConnected, initialized, send]);
 
     const toggleMachine = () => {
-        console.log("🖱️ Button gedrückt: ToggleMachine");
+        console.log("Button gedrückt: ToggleMachine");
         if (!isConnected) {
-            console.warn("⚠️ Maschine nicht verbunden");
+            console.warn("Maschine nicht verbunden");
             return;
         }
 
         if (!isOn) {
-            console.log("▶️ Einschalten & Aufheizen");
-            send("1");
+            console.log("Einschalten & Aufheizen");
+            send("HeatUp");
             setIsOn(true);
             setIsReady(false);
         } else {
-            console.log("⏹ Ausschalten - Abkühlen läuft im Hintergrund");
-            send("5");
+            console.log("Ausschalten - Abkühlen läuft im Hintergrund");
+            send("CoolDown");
             setIsOn(false);
             setIsReady(false);
         }

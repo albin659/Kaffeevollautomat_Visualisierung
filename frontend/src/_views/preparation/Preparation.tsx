@@ -3,8 +3,7 @@ import { useWebSocket } from "../../common/context/WebSocketContext";
 import { useLanguage } from "../../common/context/LanguageContext";
 import "./Preperation.css";
 
-// MUI Imports
-import { Snackbar, Alert, AlertTitle } from "@mui/material";
+import { Snackbar, Alert } from "@mui/material";
 import CoffeeIcon from '@mui/icons-material/Coffee';
 import BuildIcon from '@mui/icons-material/Build';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -15,54 +14,48 @@ import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import PowerIcon from '@mui/icons-material/Power';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
-import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import LocalCafeIcon from '@mui/icons-material/LocalCafe';
 import BoltIcon from '@mui/icons-material/Bolt';
 import HistoryIcon from '@mui/icons-material/History';
 
 const Preparation = () => {
-    const { send, logs, isOn, isReady, isBrewing, setIsBrewing, coffeeHistory, addCoffeeToHistory } = useWebSocket();
+    const { send, statusData, isOn, isReady, isBrewing, setIsBrewing, coffeeHistory, addCoffeeToHistory } = useWebSocket();
     const { texts } = useLanguage();
 
     const [coffeeType, setCoffeeType] = useState<string>(texts.espresso);
     const [amount, setAmount] = useState<number>(1);
     const [strength, setStrength] = useState<number>(3);
 
-    // Status aus Logs extrahieren
     const [waterLevelIsGood, setWaterLevelIsGood] = useState<boolean>(true);
     const [coffeeGroundsContainerEmpty, setCoffeeGroundsContainerEmpty] = useState<boolean>(true);
 
-    // Snackbar States
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState("");
     const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error" | "warning" | "info">("info");
 
+    // Status aus dem statusData-Objekt extrahieren
     useEffect(() => {
-        if (logs.length === 0) return;
+        if (statusData) {
+            setWaterLevelIsGood(statusData.water_ok);
+            setCoffeeGroundsContainerEmpty(statusData.grounds_ok);
 
-        const latest = logs[logs.length - 1];
-        const parts = latest.split(",");
+            const step = statusData.current_step.toLowerCase();
 
-        if (parts.length >= 5) {
-            const [zustand, temp, wasser, kaffeesatz, durchfluss] = parts;
-            setWaterLevelIsGood(wasser.trim() === "1");
-            setCoffeeGroundsContainerEmpty(kaffeesatz.trim() === "1");
-
-            if (zustand.toLowerCase().includes("wasser leer")) {
+            if (step.includes("wasser leer")) {
                 showSnackbar(texts.waterTankEmpty, "error");
             }
 
-            if (zustand.toLowerCase().includes("kaffeesatz voll")) {
+            if (step.includes("kaffeesatz voll")) {
                 showSnackbar(texts.groundsContainerFull, "error");
             }
 
-            if (zustand.toLowerCase().includes("warten") && isBrewing) {
+            if (step.includes("warten") && isBrewing) {
                 showSnackbar(texts.coffeeReady.replace('{type}', coffeeType), "success");
                 setIsBrewing(false);
             }
         }
-    }, [logs, isBrewing, coffeeType, setIsBrewing, texts]);
+    }, [statusData, isBrewing, coffeeType, setIsBrewing, texts]);
 
     const showSnackbar = (message: string, severity: "success" | "error" | "warning" | "info") => {
         setSnackbarMessage(message);
@@ -102,7 +95,8 @@ const Preparation = () => {
         setIsBrewing(true);
         showSnackbar(texts.brewingStarted.replace('{type}', coffeeType), "info");
 
-        send("2"); // Zubereitung starten
+        // Neues Command-Format: "Brew"
+        send("Brew");
 
         setTimeout(() => {
             send(amount.toString());
@@ -113,7 +107,7 @@ const Preparation = () => {
             send(typeCode);
         }, 100);
 
-        // Kaffees zur History hinzufügen (wird ans Backend gesendet)
+        // Kaffees zur History hinzufügen
         setTimeout(() => {
             const now = new Date().toISOString();
             for (let i = 0; i < amount; i++) {
@@ -128,16 +122,15 @@ const Preparation = () => {
     };
 
     const handleFillWater = () => {
-        send("3");
+        send("WaterFillUp");
         showSnackbar(texts.waterRefilled, "success");
     };
 
     const handleEmptyGrounds = () => {
-        send("4");
+        send("GroundClearing");
         showSnackbar(texts.groundsEmptied, "success");
     };
 
-    // Heute gebrühte Kaffees aus Backend-History
     const todaysCoffees = coffeeHistory.filter(coffee => {
         const coffeeDate = new Date(coffee.createdDate).toDateString();
         const today = new Date().toDateString();
@@ -146,7 +139,6 @@ const Preparation = () => {
 
     return (
         <div className="preparation-container">
-            {/* MUI Snackbar für Benachrichtigungen */}
             <Snackbar
                 open={snackbarOpen}
                 autoHideDuration={4000}
@@ -163,7 +155,6 @@ const Preparation = () => {
                 </Alert>
             </Snackbar>
 
-            {/* Hero Header */}
             <div className="preparation-hero">
                 <div className="hero-content">
                     <h1 className="hero-title">{texts.preparationTitle}</h1>
@@ -219,7 +210,6 @@ const Preparation = () => {
                         {/* Anzahl */}
                         <div className="form-group">
                             <label className="form-label">
-                                <AddIcon style={{ fontSize: 20, marginRight: 8 }} />
                                 {texts.amount}
                             </label>
                             <select
@@ -361,7 +351,7 @@ const Preparation = () => {
                 </div>
             </div>
 
-            {/* Heute gebrühte Kaffees  */}
+            {/* Heute gebrühte Kaffees */}
             <div className="logs-card">
                 <div className="card-header">
                     <HistoryIcon style={{ fontSize: 24, color: "#1976d2" }} />
