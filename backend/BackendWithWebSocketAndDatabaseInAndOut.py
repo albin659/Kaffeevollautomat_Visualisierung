@@ -9,6 +9,7 @@ client = AsyncIOMotorClient(DATABASE_URL)
 database = client.Kaffeemaschine
 status_collection = database.Status
 coffee_history_collection = database.CoffeeHistory
+status_history_collection = database.StatusHistory
 
 connected_clients = set()
 machine_state = {
@@ -21,18 +22,13 @@ machine_state = {
 
 async def get_current_status():
     try:
-        current_status = await status_collection.find_one(
-            sort=[("last_updated", -1)]  
-        )
-        
+        current_status = await status_collection.find_one()
         if current_status:
             status_copy = current_status.copy()
             if '_id' in status_copy:
                 status_copy['_id'] = str(status_copy['_id'])
             return status_copy
-        return None
     except Exception as e:
-        print(f"Error getting current status: {e}")
         return None
 
 async def get_coffee_history():
@@ -47,7 +43,45 @@ async def get_coffee_history():
         
         return history
     except Exception as e:
-        print(f"Error getting coffee history: {e}")
+        return []
+
+async def save_status_to_history(status_data):
+    try:
+        status_copy = status_data.copy()
+        if '_id' in status_copy:
+            del status_copy['_id']
+        
+        status_copy['timestamp'] = datetime.now()
+        
+        await status_history_collection.insert_one(status_copy)
+        
+        # Alte Einträge löschen, falls Datenbank zu voll wird
+        # await status_history_collection.delete_many({
+        #     'timestamp': {'$lt': datetime.now() - timedelta(days=30)}
+        # })
+        
+        return True
+    except Exception as e:
+        print(f"Error saving status to history: {e}")
+        return False
+
+async def get_status_history(limit: int = 100):
+    try:
+        history = await status_history_collection.find().sort('timestamp', -1).to_list(length=limit)
+        
+        for item in history:
+            if '_id' in item:
+                item['_id'] = str(item['_id'])
+            if 'timestamp' in item and isinstance(item['timestamp'], datetime):
+                item['timestamp'] = item['timestamp'].isoformat()
+            if 'last_updated' in item and isinstance(item['last_updated'], datetime):
+                item['last_updated'] = item['last_updated'].isoformat()
+            if 'current_date' in item and isinstance(item['current_date'], datetime):
+                item['current_date'] = item['current_date'].strftime('%d.%m.%Y')
+        
+        return history
+    except Exception as e:
+        print(f"Error getting status history: {e}")
         return []
 
 async def status_to_json(status):
@@ -133,20 +167,40 @@ async def send_coffee_history_to_all():
     except Exception as e:
         print(f"Error sending coffee history: {e}")
 
+async def send_status_history_to_all():
+    if not connected_clients:
+        return
+    
+    try:
+        history = await get_status_history()
+        
+        response = {
+            "type": "status_history",
+            "data": history
+        }
+        message = json.dumps(response, default=str)
+        
+        disconnected = set()
+        for websocket in connected_clients:
+            try:
+                await websocket.send(message)
+            except:
+                disconnected.add(websocket)
+        
+        connected_clients.difference_update(disconnected)
+    except Exception as e:
+        print(f"Error sending status history: {e}")
+
 async def update_status_in_db(status_data):
     try:
         status_data['last_updated'] = datetime.now()
         
-        existing_status = await status_collection.find_one()
+        current_status = await get_current_status()
+        if current_status:
+            await save_status_to_history(current_status)
         
-        if existing_status:
-            await status_collection.update_one(
-                {"_id": existing_status["_id"]},
-                {"$set": status_data}
-            )
-        else:
-            await status_collection.insert_one(status_data)
-        
+        await status_collection.delete_many({})
+        await status_collection.insert_one(status_data)
         return True
     except Exception as e:
         print(f"Error updating status in DB: {e}")
@@ -426,6 +480,9 @@ async def handle_command(option, websocket=None):
     elif option == "History":
         await send_coffee_history_to_all()
         return "ready"
+    elif option == "StatusHistory":  
+        await send_status_history_to_all()
+        return "ready"
     else:
         current_status = await get_current_status()
         powered_on = current_status.get('powered_on', True) if current_status else True
@@ -479,37 +536,29 @@ async def echo(websocket):
     finally:
         connected_clients.remove(websocket)
 
-async def initialize_status():
-    try:
-        initial_status = {
-            "temperature": 22,
-            "water_ok": True,
-            "grounds_ok": True,
-            "cups_since_empty": 0,
-            "cups_since_filled": 0,
-            "water_flow": 0,
-            "powered_on": False,
-            "current_step": "Warten",
-            "last_updated": datetime.now(),
-            "current_date": date.today().strftime('%d.%m.%Y')
-        }
-        
-        await update_status_in_db(initial_status)
-        
-        machine_state["last_activity"] = datetime.now()
-        machine_state["is_processing"] = False
-        machine_state["current_state"] = "ready"
-        machine_state["current_task"] = None
-        
-        return True
-    except Exception as e:
-        print(f"Error in initialize_status: {e}")
-        return False
+async def initialize_status_once():
+    initial_status = {
+        "temperature": 22,
+        "water_ok": True,
+        "grounds_ok": True,
+        "cups_since_empty": 0,
+        "cups_since_filled": 0,
+        "water_flow": 0,
+        "powered_on": False,
+        "current_step": "Warten",
+        "last_updated": datetime.now(),
+        "current_date": date.today().strftime('%d.%m.%Y')
+    }
+    await update_status_in_db(initial_status)
+    machine_state["last_activity"] = datetime.now()
+    machine_state["is_processing"] = False
+    machine_state["current_state"] = "ready"
+    machine_state["current_task"] = None
 
 async def main():
     try:
         await database.command('ping')
-        await initialize_status()
+        await initialize_status_once()
         
         asyncio.create_task(check_auto_standby())
         asyncio.create_task(continuous_warten_broadcast())
