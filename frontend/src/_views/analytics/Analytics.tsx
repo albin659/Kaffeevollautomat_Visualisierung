@@ -46,15 +46,14 @@ const Analytics = () => {
     const [currentStrength, setCurrentStrength] = useState<number | null>(null);
 
     const [chartData, setChartData] = useState<{ x: number; y: number }[]>(() => {
-        const saved = localStorage.getItem("chartData");
+        const saved = sessionStorage.getItem("chartData");
         return saved ? JSON.parse(saved) : [];
     });
 
     const [secondsCounter, setSecondsCounter] = useState<number>(() => {
-        const saved = localStorage.getItem("secondsCounter");
+        const saved = sessionStorage.getItem("secondsCounter");
         return saved ? Number(saved) : 0;
     });
-
 
     useEffect(() => {
         if (coffeeHistory.length > 0 && currentState !== texts.state.waitState) {
@@ -83,12 +82,6 @@ const Analytics = () => {
                 setCurrentStrength(null);
             }
 
-            // When brewing starts (from waiting to another state)
-            if (currentState === texts.state.waitState && newState !== texts.state.waitState && coffeeHistory.length > 0) {
-                const latestCoffee = coffeeHistory[coffeeHistory.length - 1];
-                setCurrentStrength(latestCoffee.strength);
-            }
-
             setCurrentState(newState);
             setTemperature(Number(temp));
             setWaterLevelIsGood(wasser.trim() === "1");
@@ -103,8 +96,8 @@ const Analytics = () => {
                     const resetData = [{ x: 0, y: Number(temp) }];
                     setChartData(resetData);
 
-                    localStorage.setItem("secondsCounter", "0");
-                    localStorage.setItem("chartData", JSON.stringify(resetData));
+                    sessionStorage.setItem("secondsCounter", "0");
+                    sessionStorage.setItem("chartData", JSON.stringify(resetData));
 
                     return next;
                 }
@@ -114,8 +107,8 @@ const Analytics = () => {
 
                 setChartData(newData);
 
-                localStorage.setItem("secondsCounter", String(next));
-                localStorage.setItem("chartData", JSON.stringify(newData));
+                sessionStorage.setItem("secondsCounter", String(next));
+                sessionStorage.setItem("chartData", JSON.stringify(newData));
 
                 return next;
             });
@@ -187,6 +180,7 @@ const Analytics = () => {
 
     return (
         <div className="outerDiv">
+            {/* Page Header */}
             <div className="dashboard-hero">
                 <div className="hero-content">
                     <h1 className="hero-title">{texts.analytics}</h1>
@@ -194,7 +188,7 @@ const Analytics = () => {
                 </div>
             </div>
 
-            {/* Temperatur */}
+            {/* Temperature */}
             <div className="innerDiv heatDiv">
                 <div className="card-header">
                     <GiHeatHaze className="iconConfig" />
@@ -236,7 +230,7 @@ const Analytics = () => {
             </div>
 
             <div className="infoGrid">
-                {/* Stärke */}
+                {/* Strength */}
                 <div className="innerDiv">
                     <div className="card-header">
                         <IoSpeedometerOutline className="iconConfig" />
@@ -246,7 +240,7 @@ const Analytics = () => {
                     {renderStrengthDisplay()}
                 </div>
 
-                {/* Wasserdurchfluss */}
+                {/* Waterflow */}
                 <div className="innerDiv">
                     <div className="card-header">
                         <BiWater className="iconConfig" />
@@ -257,7 +251,7 @@ const Analytics = () => {
                 </div>
             </div>
 
-            {/* Zustand */}
+            {/* State */}
             <div className="innerDiv state-container">
                 <p className="info-title-state">{texts.currentState}</p>
 
@@ -279,7 +273,7 @@ const Analytics = () => {
             </div>
 
             <div className="infoGrid">
-                {/* Wasser */}
+                {/* Water */}
                 <div
                     className={`hoverInfo waterAndCoffeeStatus ${
                         waterLevelIsGood ? "backgroundGreen" : "backgroundRed"
@@ -292,7 +286,7 @@ const Analytics = () => {
                     </p>
                 </div>
 
-                {/* Kaffeesatz */}
+                {/* Coffegrounds */}
                 <div
                     className={`hoverInfo waterAndCoffeeStatus ${
                         coffeeGroundsContainerEmpty ? "backgroundGreen" : "backgroundRed"
@@ -305,7 +299,6 @@ const Analytics = () => {
                     </p>
                 </div>
             </div>
-
         </div>
     );
 };
