@@ -120,6 +120,7 @@ export const texts = {
         historyTodayBrews: 'Heute gebrüht',
         historyTotalBrews: 'Gesamt gebrüht',
         historyFavoriteType: 'Beliebteste Sorte',
+        historyNoCoffeMadeYet: "Noch kein Kaffee zubereitet",
 
         // Report spezifisch
         reportTitle: 'Berichte & Export',
@@ -261,6 +262,7 @@ export const texts = {
         historyTodayBrews: 'Brewed Today',
         historyTotalBrews: 'Brewed Total',
         historyFavoriteType: 'Favorite Type',
+        historyNoCoffeMadeYet:"No coffee made yet",
 
         // Report spezifisch
         reportTitle: 'Reports & Export',

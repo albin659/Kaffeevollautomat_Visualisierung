@@ -4,39 +4,56 @@ import { useWebSocket } from "../../common/context/WebSocketContext";
 import { useLanguage } from "../../common/context/LanguageContext";
 
 const History = () => {
-    const { logs, coffeeHistory } = useWebSocket();
+    const { coffeeHistory } = useWebSocket();
     const { texts } = useLanguage();
 
     // Statistiken berechnen
     const statistics = useMemo(() => {
-        const todaysCoffees = coffeeHistory.filter(coffee => {
+        const today = new Date().toDateString();
+
+        let todayCount = 0;
+        // Record für Anzahl der Kaffees mit "Name": Anzahl
+        const coffeeTypes: Record<string, number> = {};
+
+        // durch useState coffeeHistory iterieren
+        for (const coffee of coffeeHistory) {
             const coffeeDate = new Date(coffee.createdDate).toDateString();
-            const today = new Date().toDateString();
-            return coffeeDate === today;
-        });
 
-        const coffeeTypes = coffeeHistory.reduce((acc, coffee) => {
-            acc[coffee.type] = (acc[coffee.type] || 0) + 1;
-            return acc;
-        }, {} as Record<string, number>);
+            if (coffeeDate === today) {
+                todayCount++;
+            }
 
-        const mostPopular = Object.entries(coffeeTypes).reduce((a, b) =>
-            a[1] > b[1] ? a : b, ["Kein Kaffee", 0]
-        )[0];
+            if (coffeeTypes[coffee.type])
+                coffeeTypes[coffee.type]++;
+            else
+                coffeeTypes[coffee.type] = 1;
+
+
+        }
+
+        const mostPopularType =
+            Object.entries(coffeeTypes).length > 0
+                ? Object.entries(coffeeTypes).reduce((a, b) =>
+                    a[1] > b[1] ? a : b
+                )[0]
+                : texts.historyNoCoffeMadeYet;
 
         return {
-            todayCount: todaysCoffees.length,
+            todayCount,
             totalCount: coffeeHistory.length,
-            mostPopularType: mostPopular
+            mostPopularType,
         };
-    }, [coffeeHistory]);
+    }, [coffeeHistory, texts.historyNoCoffeMadeYet]);
 
-    const cupLabel = useMemo(() => {
-        const todayCount = statistics.todayCount;
-        if (todayCount === 1) return texts.historySingleCup;
-        if (todayCount === 0) return texts.cups;
-        return texts.cups;
-    }, [statistics.todayCount, texts]);
+    const cupLabel =
+        statistics.todayCount === 1
+            ? texts.historySingleCup
+            : texts.cups;
+
+    const reversedHistory = useMemo(
+        () => coffeeHistory.slice().reverse(),
+        [coffeeHistory]
+    );
 
     // Formatierung für Datum und Zeit
     const formatDateTime = (dateString: string) => {
@@ -64,7 +81,7 @@ const History = () => {
                     <p className="info-titleHistory">{texts.historyHeader}</p>
                 </div>
 
-                {coffeeHistory.length > 0 ? (
+                {reversedHistory.length > 0 ? (
                     <table className="history-table">
                         <thead>
                         <tr>
@@ -75,8 +92,10 @@ const History = () => {
                         </tr>
                         </thead>
                         <tbody>
-                        {coffeeHistory.slice().reverse().map((coffee) => {
-                            const { date, time } = formatDateTime(coffee.createdDate);
+                        {reversedHistory.map((coffee) => {
+                            const { date, time } = formatDateTime(
+                                coffee.createdDate
+                            );
                             return (
                                 <tr key={coffee.id}>
                                     <td>{date}</td>
@@ -89,13 +108,13 @@ const History = () => {
                         </tbody>
                     </table>
                 ) : (
-                    <p style={{
-                        textAlign: 'center',
-                        padding: '20px',
-                        color: '#666'
-                    }}>
-                        Noch keine Kaffees zubereitet
-                    </p>
+                    <p
+                        style={{
+                            textAlign: "center",
+                            padding: "20px",
+                            color: "#666",
+                        }}
+                    >{texts.historyNoCoffeMadeYet}</p>
                 )}
             </div>
 
