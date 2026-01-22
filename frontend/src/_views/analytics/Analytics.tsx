@@ -281,8 +281,9 @@ const Analytics = () => {
                 >
                     <p className="numbersText centerText">
                         {waterLevelIsGood
-                            ? "Genug Wasser vorhanden"
-                            : "Bitte Wasser nachfüllen"}
+                            ? texts.waterTankStatusPositive
+                            : texts.waterTankStatusNegative
+                        }
                     </p>
                 </div>
 
@@ -294,8 +295,9 @@ const Analytics = () => {
                 >
                     <p className="numbersText centerText">
                         {coffeeGroundsContainerEmpty
-                            ? "Kaffeesatzbehälter frei"
-                            : "Bitte Kaffeesatzbehälter leeren"}
+                            ? texts.groundsContainerStatusPositive
+                            : texts.groundsContainerStatusNegative
+                        }
                     </p>
                 </div>
             </div>

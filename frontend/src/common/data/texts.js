@@ -62,6 +62,10 @@ export const texts = {
         },
         pressCoffee: 'Drücke einen Kaffee',
         strengthText: 'Stärke',
+        waterTankStatusPositive: "Genug Wasser vorhanden",
+        waterTankStatusNegative: "Wasserstand niedrig",
+        groundsContainerStatusPositive: "Kaffeesatzbehälter leer",
+        groundsContainerStatusNegative: "Kaffeesatzbehälter voll",
 
         // Preparation spezifisch
         preparationTitle: 'Zubereitung',
@@ -204,6 +208,10 @@ export const texts = {
         },
         pressCoffee: 'Press a Coffee',
         strengthText: 'Strength',
+        waterTankStatusPositive: "Sufficient water available",
+        waterTankStatusNegative: "Low water level",
+        groundsContainerStatusPositive: "Coffee grounds container empty",
+        groundsContainerStatusNegative: "Coffee grounds container full",
 
         // Preparation spezifisch
         preparationTitle: 'Preparation',
