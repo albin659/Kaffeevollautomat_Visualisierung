@@ -20,6 +20,7 @@ machine_state = {
     "current_task": None
 }
 
+# Aktuelle Werte aus Datenbank auslesen
 async def get_current_status():
     try:
         current_status = await status_collection.find_one()
@@ -44,6 +45,54 @@ async def get_coffee_history():
         return history
     except Exception as e:
         return []
+    
+async def get_status_history(limit: int = 100):
+    try:
+        history = await status_history_collection.find().sort('timestamp', -1).to_list(length=limit)
+        
+        for item in history:
+            if '_id' in item:
+                item['_id'] = str(item['_id'])
+            if 'timestamp' in item and isinstance(item['timestamp'], datetime):
+                item['timestamp'] = item['timestamp'].isoformat()
+            if 'last_updated' in item and isinstance(item['last_updated'], datetime):
+                item['last_updated'] = item['last_updated'].isoformat()
+            if 'current_date' in item and isinstance(item['current_date'], datetime):
+                item['current_date'] = item['current_date'].strftime('%d.%m.%Y')
+        
+        return history
+    except Exception as e:
+        print(f"Error getting status history: {e}")
+        return []
+
+# Step updaten
+async def update_step(step_name: str, water_flow: int = 0, **additional_updates):
+    current_status = await get_current_status()
+    if not current_status:
+        return False
+    
+    current_status['current_step'] = step_name
+    current_status['water_flow'] = water_flow
+    current_status.update(additional_updates)
+    
+    success = await update_status_in_db(current_status)
+    if success:
+        await broadcast_status()
+    return success
+
+# Daten in Datenbank einspeichern
+async def update_status_in_db(status_data):
+    try:
+        if status_data:
+            status_data['last_updated'] = datetime.now()
+            await save_status_to_history(status_data)
+        
+        await status_collection.delete_many({})
+        await status_collection.insert_one(status_data)
+        return True
+    except Exception as e:
+        print(f"Error updating status in DB: {e}")
+        return False
 
 async def save_status_to_history(status_data):
     try:
@@ -65,25 +114,23 @@ async def save_status_to_history(status_data):
         print(f"Error saving status to history: {e}")
         return False
 
-async def get_status_history(limit: int = 100):
+async def save_coffee_to_history(coffee_data):
     try:
-        history = await status_history_collection.find().sort('timestamp', -1).to_list(length=limit)
-        
-        for item in history:
-            if '_id' in item:
-                item['_id'] = str(item['_id'])
-            if 'timestamp' in item and isinstance(item['timestamp'], datetime):
-                item['timestamp'] = item['timestamp'].isoformat()
-            if 'last_updated' in item and isinstance(item['last_updated'], datetime):
-                item['last_updated'] = item['last_updated'].isoformat()
-            if 'current_date' in item and isinstance(item['current_date'], datetime):
-                item['current_date'] = item['current_date'].strftime('%d.%m.%Y')
-        
-        return history
+        if 'createdDate' in coffee_data and isinstance(coffee_data['createdDate'], str):
+            try:
+                coffee_data['createdDate'] = datetime.fromisoformat(coffee_data['createdDate'].replace('Z', '+00:00'))
+            except:
+                coffee_data['createdDate'] = datetime.now()
+        else:
+            coffee_data['createdDate'] = datetime.now()
+            
+        await coffee_history_collection.insert_one(coffee_data)
+        return True
     except Exception as e:
-        print(f"Error getting status history: {e}")
-        return []
+        print(f"Error saving coffee to history: {e}")
+        return False
 
+# String to JSON
 async def status_to_json(status):
     if not status:
         return {
@@ -94,7 +141,7 @@ async def status_to_json(status):
                 "grounds_ok": True,
                 "water_flow": 0,
                 "current_date": date.today().strftime('%d.%m.%Y'),
-                "current_step": "Warten",
+                "current_step": "Waiting",
                 "powered_on": False,
                 "cups_since_empty": 0,
                 "cups_since_filled": 0,
@@ -114,6 +161,7 @@ async def status_to_json(status):
         "data": status_copy
     }
 
+# Nachricht an Frontend schicken
 async def broadcast_status():
     if not connected_clients:
         return
@@ -167,81 +215,13 @@ async def send_coffee_history_to_all():
     except Exception as e:
         print(f"Error sending coffee history: {e}")
 
-async def send_status_history_to_all():
-    if not connected_clients:
-        return
-    
-    try:
-        history = await get_status_history()
-        
-        response = {
-            "type": "status_history",
-            "data": history
-        }
-        message = json.dumps(response, default=str)
-        
-        disconnected = set()
-        for websocket in connected_clients:
-            try:
-                await websocket.send(message)
-            except:
-                disconnected.add(websocket)
-        
-        connected_clients.difference_update(disconnected)
-    except Exception as e:
-        print(f"Error sending status history: {e}")
-
-async def update_status_in_db(status_data):
-    try:
-        status_data['last_updated'] = datetime.now()
-        
-        current_status = await get_current_status()
-        if current_status:
-            await save_status_to_history(current_status)
-        
-        await status_collection.delete_many({})
-        await status_collection.insert_one(status_data)
-        return True
-    except Exception as e:
-        print(f"Error updating status in DB: {e}")
-        return False
-
-async def save_coffee_to_history(coffee_data):
-    try:
-        if 'createdDate' in coffee_data and isinstance(coffee_data['createdDate'], str):
-            try:
-                coffee_data['createdDate'] = datetime.fromisoformat(coffee_data['createdDate'].replace('Z', '+00:00'))
-            except:
-                coffee_data['createdDate'] = datetime.now()
-        else:
-            coffee_data['createdDate'] = datetime.now()
-            
-        await coffee_history_collection.insert_one(coffee_data)
-        return True
-    except Exception as e:
-        print(f"Error saving coffee to history: {e}")
-        return False
-
-async def update_step_in_db(step_name: str, water_flow: int = 0, **additional_updates):
-    current_status = await get_current_status()
-    if not current_status:
-        return False
-    
-    current_status['current_step'] = step_name
-    current_status['water_flow'] = water_flow
-    current_status.update(additional_updates)
-    
-    success = await update_status_in_db(current_status)
-    if success:
-        await broadcast_status()
-    return success
-
-async def continuous_warten_broadcast():
+# Funktionen die im Hintergrund laufen
+async def continuous_waiting_broadcast():
     while True:
         await asyncio.sleep(1)
         
         current_status = await get_current_status()
-        if current_status and current_status.get('current_step') == 'Warten':
+        if current_status and current_status.get('current_step') == 'Waiting':
             await broadcast_status()
 
 async def check_auto_standby():
@@ -256,13 +236,14 @@ async def check_auto_standby():
         if time_since_activity > 60 and machine_state["current_state"] == "ready":
             current_status = await get_current_status()
             if current_status and current_status.get('powered_on', False):
-                await update_step_in_db("Warten", 0, powered_on=True)
+                await update_step("Waiting", 0, powered_on=True)
         
         if time_since_activity > 120:
             current_status = await get_current_status()
             if current_status and current_status.get('powered_on', False):
                 asyncio.create_task(simulate_cooling())
 
+# Simulationsbereich
 async def simulate_heating():
     if machine_state["current_task"] and not machine_state["current_task"].done():
         machine_state["current_task"].cancel()
@@ -284,7 +265,7 @@ async def simulate_heating():
         target_temp = 94
         
         if current_temp >= target_temp:
-            await update_step_in_db("Warten", 0, temperature=target_temp, powered_on=True)
+            await update_step("Waiting", 0, temperature=target_temp, powered_on=True)
             return
         
         total_temp_diff = target_temp - 22
@@ -293,7 +274,7 @@ async def simulate_heating():
         total_seconds = 45
         remaining_seconds = int((1 - progress) * total_seconds)
         
-        await update_step_in_db("Aufheizen", 0, powered_on=True)
+        await update_step("HeatUp", 0, powered_on=True)
         
         for second in range(remaining_seconds + 1):
             if machine_state["current_task"] != asyncio.current_task():
@@ -304,18 +285,18 @@ async def simulate_heating():
             
             current_water_flow = 5 if second >= (remaining_seconds - 15) and second <= remaining_seconds else 0
             
-            await update_step_in_db(
-                "Aufheizen",
+            await update_step(
+                "HeatUp",
                 current_water_flow,
                 temperature=round(new_temp, 1),
                 powered_on=True
             )
             await asyncio.sleep(1)
         
-        await update_step_in_db("Warten", 0, temperature=target_temp, powered_on=True)
+        await update_step("Waiting", 0, temperature=target_temp, powered_on=True)
         
     except asyncio.CancelledError:
-        await update_step_in_db("Warten", 0, powered_on=True)
+        await update_step("Waiting", 0, powered_on=True)
     except Exception as e:
         print(f"Error in simulate_heating: {e}")
     finally:
@@ -344,25 +325,25 @@ async def simulate_cooling():
         target_temp = 22
         total_seconds = 180
         
-        await update_step_in_db("Abkühlen", 0, powered_on=False)
+        await update_step("Waiting", 0, powered_on=False)
         
         for second in range(total_seconds):
             if machine_state["current_task"] != asyncio.current_task():
                 return
                 
             current_temp = start_temp - ((start_temp - target_temp) * (second / total_seconds))
-            await update_step_in_db(
-                "Abkühlen",
+            await update_step(
+                "CoolDown",
                 0,
                 temperature=round(current_temp, 1),
                 powered_on=False
             )
             await asyncio.sleep(1)
             
-        await update_step_in_db("Warten", 0, temperature=target_temp, powered_on=False)
+        await update_step("Waiting", 0, temperature=target_temp, powered_on=False)
         
     except asyncio.CancelledError:
-        await update_step_in_db("Warten", 0, powered_on=False)
+        await update_step("Waiting", 0, powered_on=False)
     except Exception as e:
         print(f"Error in simulate_cooling: {e}")
     finally:
@@ -371,6 +352,7 @@ async def simulate_cooling():
             machine_state["current_task"] = None
 
 async def simulate_coffee_brewing(coffee_type: str, amount: int):
+    # Check ob gerade ein nicht abgeschlossener Task vorhanden ist
     if machine_state["current_task"] and not machine_state["current_task"].done():
         machine_state["current_task"].cancel()
         try:
@@ -388,24 +370,24 @@ async def simulate_coffee_brewing(coffee_type: str, amount: int):
             return False
         
         if not current_status.get('powered_on', False):
-            await update_step_in_db("Einschalten...", 0, powered_on=True)
+            await update_step("Power...", 0, powered_on=True)
             await asyncio.sleep(1)
         
         if not current_status.get('water_ok', True):
-            await update_step_in_db("Wasser leer", 0, powered_on=True)
+            await update_step("Water empty", 0, powered_on=True)
             return False
         
         if not current_status.get('grounds_ok', True):
-            await update_step_in_db("Kaffeesatz voll", 0, powered_on=True)
+            await update_step("Grounds full", 0, powered_on=True)
             return False
         
         coffee_info = coffee_types.get(coffee_type, {})
         steps = [
-            ("Mahlen", coffee_info.get('grinding_steps', 6)),
-            ("Pressen", coffee_info.get('press_steps', 5)),
-            ("Anfeuchten", coffee_info.get('moisting_steps', 2)),
+            ("Grind", coffee_info.get('grinding_steps', 6)),
+            ("Press", coffee_info.get('press_steps', 5)),
+            ("Moisten", coffee_info.get('moisting_steps', 2)),
             ("Brühen", coffee_info.get('brewing_steps', 14) * amount),
-            ("Zur Startposition", coffee_info.get('toStart_steps', 4))
+            ("ToStartposition", coffee_info.get('toStart_steps', 4))
         ]
         
         for step_name, step_duration in steps:
@@ -413,17 +395,17 @@ async def simulate_coffee_brewing(coffee_type: str, amount: int):
                 if machine_state["current_task"] != asyncio.current_task():
                     return False
                     
-                water_flow = 5 if step_name in ["Anfeuchten", "Brühen"] else 0
-                await update_step_in_db(step_name, water_flow, powered_on=True)
+                water_flow = 5 if step_name in ["Moisten", "Brew"] else 0
+                await update_step(step_name, water_flow, powered_on=True)
                 await asyncio.sleep(1)
                 
                 current_status = await get_current_status()
                 if current_status:
                     if not current_status.get('water_ok', True):
-                        await update_step_in_db("Wasser leer - Abbruch", 0, powered_on=True)
+                        await update_step("Water empty", 0, powered_on=True)
                         return False
                     if not current_status.get('grounds_ok', True):
-                        await update_step_in_db("Kaffeesatz voll - Abbruch", 0, powered_on=True)
+                        await update_step("Ground full", 0, powered_on=True)
                         return False
         
         current_status = await get_current_status()
@@ -431,8 +413,8 @@ async def simulate_coffee_brewing(coffee_type: str, amount: int):
             cups_since_empty = current_status.get('cups_since_empty', 0) + amount
             cups_since_filled = current_status.get('cups_since_filled', 0) + amount
             
-            await update_step_in_db(
-                "Warten",
+            await update_step(
+                "Waiting",
                 0,
                 cups_since_empty=cups_since_empty,
                 cups_since_filled=cups_since_filled,
@@ -444,7 +426,7 @@ async def simulate_coffee_brewing(coffee_type: str, amount: int):
         return True
         
     except asyncio.CancelledError:
-        await update_step_in_db("Warten", 0, powered_on=True)
+        await update_step("Waiting", 0, powered_on=True)
         return False
     except Exception as e:
         print(f"Error in simulate_coffee_brewing: {e}")
@@ -459,6 +441,7 @@ coffee_types = {
     "2": {"name": "Espresso", "grinding_steps": 6, "press_steps": 5, "moisting_steps": 2, "brewing_steps": 14, "toStart_steps": 4}
 }
 
+# Frontend Nachrichten verarbeiten
 async def handle_command(option, websocket=None):
     machine_state["last_activity"] = datetime.now()
     
@@ -469,10 +452,10 @@ async def handle_command(option, websocket=None):
         await broadcast_status()
         return "await_amount"
     elif option == "WaterFillUp":
-        await update_step_in_db("Warten", 0, water_ok=True, cups_since_filled=0, powered_on=True)
+        await update_step("Waiting", 0, water_ok=True, cups_since_filled=0, powered_on=True)
         return "ready"
     elif option == "GroundClearing":
-        await update_step_in_db("Warten", 0, grounds_ok=True, cups_since_empty=0, powered_on=True)
+        await update_step("Waiting", 0, grounds_ok=True, cups_since_empty=0, powered_on=True)
         return "ready"
     elif option == "CoolDown":
         asyncio.create_task(simulate_cooling())
@@ -480,15 +463,13 @@ async def handle_command(option, websocket=None):
     elif option == "History":
         await send_coffee_history_to_all()
         return "ready"
-    elif option == "StatusHistory":  
-        await send_status_history_to_all()
-        return "ready"
     else:
         current_status = await get_current_status()
         powered_on = current_status.get('powered_on', True) if current_status else True
-        await update_step_in_db("Warten", 0, powered_on=powered_on)
+        await update_step("Waiting", 0, powered_on=powered_on)
         return "ready"
 
+# WebSocket Handler
 async def echo(websocket):
     connected_clients.add(websocket)
     
@@ -508,34 +489,32 @@ async def echo(websocket):
                 except json.JSONDecodeError:
                     pass
             
-            if machine_state["current_state"] in ["ready", "await_amount", "await_coffee_choice"]:
-                if machine_state["current_state"] == "await_amount":
-                    if message in ["1", "2"]:
-                        machine_state["current_amount"] = int(message)
-                        machine_state["current_state"] = "await_coffee_choice"
-                        await broadcast_status()
-                    else:
-                        machine_state["current_state"] = "ready"
-                    continue
+            if machine_state["current_state"] == "await_amount":
+                if message in ["1", "2"]:
+                    machine_state["current_amount"] = int(message)
+                    machine_state["current_state"] = "await_coffee_choice"
+                else:
+                    machine_state["current_state"] = "ready"
+                continue
                 
-                if machine_state["current_state"] == "await_coffee_choice":
-                    if message in coffee_types:
-                        asyncio.create_task(
-                            simulate_coffee_brewing(message, machine_state["current_amount"])
-                        )
-                        machine_state["current_state"] = "ready"
-                    else:
-                        machine_state["current_state"] = await handle_command(message, websocket)
-                    continue
+            if machine_state["current_state"] == "await_coffee_choice":
+                if message in coffee_types:
+                    asyncio.create_task(
+                        simulate_coffee_brewing(message, machine_state["current_amount"])
+                    )
+                    
+                machine_state["current_state"] = "ready"
+                continue
                 
-                if machine_state["current_state"] == "ready":
-                    machine_state["current_state"] = await handle_command(message, websocket)
+            if machine_state["current_state"] == "ready":
+                machine_state["current_state"] = await handle_command(message, websocket)
     
     except websockets.exceptions.ConnectionClosed:
         pass
     finally:
         connected_clients.remove(websocket)
 
+# Start Status setzen
 async def initialize_status_once():
     initial_status = {
         "temperature": 22,
@@ -555,13 +534,15 @@ async def initialize_status_once():
     machine_state["current_state"] = "ready"
     machine_state["current_task"] = None
 
+# Main
 async def main():
     try:
         await database.command('ping')
         await initialize_status_once()
         
+        # Hintergrund Funktionen
         asyncio.create_task(check_auto_standby())
-        asyncio.create_task(continuous_warten_broadcast())
+        asyncio.create_task(continuous_waiting_broadcast())
         
     except Exception as e:
         print(f"Error initializing: {e}")
