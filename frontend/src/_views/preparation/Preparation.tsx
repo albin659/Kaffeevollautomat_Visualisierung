@@ -281,7 +281,7 @@ const Preparation = () => {
                         <button
                             type="button"
                             className="maintenance-button water"
-                            disabled={isBrewing}
+                            disabled={isBrewing || !isReady}
                             onClick={handleFillWater}
                         >
                             <div className="maintenance-icon">
@@ -298,7 +298,7 @@ const Preparation = () => {
                         <button
                             type="button"
                             className="maintenance-button grounds"
-                            disabled={isBrewing}
+                            disabled={isBrewing || !isReady}
                             onClick={handleEmptyGrounds}
                         >
                             <div className="maintenance-icon">
