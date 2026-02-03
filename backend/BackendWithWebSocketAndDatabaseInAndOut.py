@@ -243,8 +243,8 @@ async def check_auto_standby():
             if current_status and current_status.get('powered_on', False):
                 asyncio.create_task(simulate_cooling())
 
-# Simulationsbereich
-async def simulate_heating():
+# Wird am Start der Simulationsfunktionen ausgeführt
+async def prepare_machine_task():
     if machine_state["current_task"] and not machine_state["current_task"].done():
         machine_state["current_task"].cancel()
         try:
@@ -255,6 +255,16 @@ async def simulate_heating():
     machine_state["current_task"] = asyncio.current_task()
     machine_state["is_processing"] = True
     machine_state["last_activity"] = datetime.now()
+
+# Wird am Ende der Simulationsfunktionen ausgeführt
+async def cleanup_machine_task():
+    machine_state["is_processing"] = False
+    if machine_state["current_task"] == asyncio.current_task():
+        machine_state["current_task"] = None
+
+# Simulationsbereich
+async def simulate_heating():
+    await prepare_machine_task()
     
     try:
         current_status = await get_current_status()
@@ -300,42 +310,42 @@ async def simulate_heating():
     except Exception as e:
         print(f"Error in simulate_heating: {e}")
     finally:
-        machine_state["is_processing"] = False
-        if machine_state["current_task"] == asyncio.current_task():
-            machine_state["current_task"] = None
+        await cleanup_machine_task()
 
 async def simulate_cooling():
-    if machine_state["current_task"] and not machine_state["current_task"].done():
-        machine_state["current_task"].cancel()
-        try:
-            await machine_state["current_task"]
-        except asyncio.CancelledError:
-            pass
-    
-    machine_state["current_task"] = asyncio.current_task()
-    machine_state["is_processing"] = True
-    machine_state["last_activity"] = datetime.now()
+    await prepare_machine_task()
     
     try:
         current_status = await get_current_status()
         if not current_status:
             return
         
-        start_temp = current_status.get('temperature', 94)
+        current_temp = current_status.get('temperature', 94) 
         target_temp = 22
-        total_seconds = 180
         
-        await update_step("Waiting", 0, powered_on=False)
+        if current_temp <= target_temp:
+            await update_step("Waiting", 0, temperature=target_temp, powered_on=False)
+            return
         
-        for second in range(total_seconds):
+        total_temp_diff = 94 - target_temp  
+        current_temp_diff = current_temp - target_temp 
+        progress = (total_temp_diff - current_temp_diff) / total_temp_diff
+        total_seconds = 180  
+        remaining_seconds = int((1 - progress) * total_seconds)
+        
+        await update_step("CoolDown", 0, powered_on=False)
+        
+        for second in range(remaining_seconds + 1):
             if machine_state["current_task"] != asyncio.current_task():
                 return
                 
-            current_temp = start_temp - ((start_temp - target_temp) * (second / total_seconds))
+            progress = second / remaining_seconds
+            new_temp = current_temp - (current_temp_diff * progress)  
+            
             await update_step(
                 "CoolDown",
                 0,
-                temperature=round(current_temp, 1),
+                temperature=round(new_temp, 1),
                 powered_on=False
             )
             await asyncio.sleep(1)
@@ -347,31 +357,15 @@ async def simulate_cooling():
     except Exception as e:
         print(f"Error in simulate_cooling: {e}")
     finally:
-        machine_state["is_processing"] = False
-        if machine_state["current_task"] == asyncio.current_task():
-            machine_state["current_task"] = None
+        await cleanup_machine_task()
 
 async def simulate_coffee_brewing(coffee_type: str, amount: int):
-    # Check ob gerade ein nicht abgeschlossener Task vorhanden ist
-    if machine_state["current_task"] and not machine_state["current_task"].done():
-        machine_state["current_task"].cancel()
-        try:
-            await machine_state["current_task"]
-        except asyncio.CancelledError:
-            pass
-    
-    machine_state["current_task"] = asyncio.current_task()
-    machine_state["is_processing"] = True
-    machine_state["last_activity"] = datetime.now()
+    await prepare_machine_task()
     
     try:
         current_status = await get_current_status()
         if not current_status:
             return False
-        
-        if not current_status.get('powered_on', False):
-            await update_step("Power...", 0, powered_on=True)
-            await asyncio.sleep(1)
         
         if not current_status.get('water_ok', True):
             await update_step("Water empty", 0, powered_on=True)
@@ -386,7 +380,7 @@ async def simulate_coffee_brewing(coffee_type: str, amount: int):
             ("Grind", coffee_info.get('grinding_steps', 6)),
             ("Press", coffee_info.get('press_steps', 5)),
             ("Moisten", coffee_info.get('moisting_steps', 2)),
-            ("Brühen", coffee_info.get('brewing_steps', 14) * amount),
+            ("Brew", coffee_info.get('brewing_steps', 14) * amount),
             ("ToStartposition", coffee_info.get('toStart_steps', 4))
         ]
         
@@ -398,15 +392,6 @@ async def simulate_coffee_brewing(coffee_type: str, amount: int):
                 water_flow = 5 if step_name in ["Moisten", "Brew"] else 0
                 await update_step(step_name, water_flow, powered_on=True)
                 await asyncio.sleep(1)
-                
-                current_status = await get_current_status()
-                if current_status:
-                    if not current_status.get('water_ok', True):
-                        await update_step("Water empty", 0, powered_on=True)
-                        return False
-                    if not current_status.get('grounds_ok', True):
-                        await update_step("Ground full", 0, powered_on=True)
-                        return False
         
         current_status = await get_current_status()
         if current_status:
@@ -432,13 +417,11 @@ async def simulate_coffee_brewing(coffee_type: str, amount: int):
         print(f"Error in simulate_coffee_brewing: {e}")
         return False
     finally:
-        machine_state["is_processing"] = False
-        if machine_state["current_task"] == asyncio.current_task():
-            machine_state["current_task"] = None
+        await cleanup_machine_task()
 
 coffee_types = {
-    "1": {"name": "Normal", "grinding_steps": 6, "press_steps": 5, "moisting_steps": 2, "brewing_steps": 14, "toStart_steps": 4},
-    "2": {"name": "Espresso", "grinding_steps": 6, "press_steps": 5, "moisting_steps": 2, "brewing_steps": 14, "toStart_steps": 4}
+    "Normal": {"grinding_steps": 6, "press_steps": 5, "moisting_steps": 2, "brewing_steps": 14, "toStart_steps": 4},
+    "Espresso": {"grinding_steps": 6, "press_steps": 5, "moisting_steps": 2, "brewing_steps": 10, "toStart_steps": 4}
 }
 
 # Frontend Nachrichten verarbeiten
