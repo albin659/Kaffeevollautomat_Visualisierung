@@ -507,7 +507,7 @@ async def initialize_status_once():
         "cups_since_filled": 0,
         "water_flow": 0,
         "powered_on": False,
-        "current_step": "Warten",
+        "current_step": "Waiting",
         "last_updated": datetime.now(),
         "current_date": date.today().strftime('%d.%m.%Y')
     }
