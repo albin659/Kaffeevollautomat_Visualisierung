@@ -36,7 +36,7 @@ ChartJS.register(
 
 const Analytics = () => {
     const { logs, coffeeHistory } = useWebSocket();
-    const { texts, translate } = useLanguage();
+    const { texts, translate, language } = useLanguage();
 
     const [temperature, setTemperature] = useState<number>(0);
     const [waterLevelIsGood, setWaterLevelIsGood] = useState<boolean>(true);
@@ -72,12 +72,12 @@ const Analytics = () => {
             const [zustand, temp, wasser, kaffeesatz, durchfluss] = parts;
             const newState = translate(zustand.trim());
 
-            // When state changes to waiting or cooling, reset strength
+            // When state changes, reset strength for certain states
             if (
-                (currentState == texts.state.waitState) ||
-                (currentState == texts.state.coolingDownState) ||
-                (currentState == texts.state.heatingState) ||
-                (currentState == texts.state.toStartPositionState)
+                (newState === texts.state.waitState) ||
+                (newState === texts.state.coolingDownState) ||
+                (newState === texts.state.heatingState) ||
+                (newState === texts.state.toStartPositionState)
             ) {
                 setCurrentStrength(null);
             }
@@ -113,7 +113,7 @@ const Analytics = () => {
                 return next;
             });
         }
-    }, [logs, currentState, coffeeHistory, texts, translate]);
+    }, [logs, texts, translate, language]); // jetzt mit language
 
     const allStates = [
         texts.state.heatingState,

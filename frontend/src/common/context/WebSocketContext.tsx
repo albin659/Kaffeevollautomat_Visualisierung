@@ -16,7 +16,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     // History nach Brühvorgang neu laden
     const reloadBrewing=()=>{
-        if (lastBrewingState.current === true && isBrewing === false) {
+        if (lastBrewingState.current && !isBrewing) {
             console.log("Brühvorgang beendet - lade History neu");
             setTimeout(() => {
                 if (ws.current && ws.current.readyState === WebSocket.OPEN) {
@@ -75,35 +75,35 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                     setLogs(prev => [...prev, logEntry]);
 
                     // Maschinen-Status aktualisieren
-                    const step = status.current_step.toLowerCase();
+                    const step = status.current_step;
                     setIsOn(status.powered_on);
 
-                    // Brühvorgang erkennen
-                    if (step.includes("mahlen") || step.includes("pressen") ||
-                        step.includes("anfeuchten") || step.includes("brühen") ||
-                        step.includes("zur startposition")) {
+                    // Brühvorgang erkennen (exakte Backend-Bezeichnungen)
+                    if (step === "Grind" || step === "Press" ||
+                        step === "Moisten" || step === "Brew" ||
+                        step === "ToStartposition") {
                         setIsBrewing(true);
                         setIsReady(false);
                     }
                     // Bereit-Status
-                    else if (step.includes("warten") && status.powered_on) {
+                    else if (step === "Waiting" && status.powered_on) {
                         setIsReady(true);
                         setIsBrewing(false);
                     }
                     // Aufheizen
-                    else if (step.includes("aufheizen")) {
+                    else if (step === "HeatUp") {
                         setIsReady(false);
                         setIsBrewing(false);
                     }
                     // Abkühlen oder Fehler
                     else {
                         setIsReady(false);
-                        if (step.includes("abkühlen")) {
+                        if (step === "CoolDown") {
                             setIsBrewing(false);
                         }
                     }
 
-                    console.log(`Status: ${status.current_step} | An: ${status.powered_on} | Bereit: ${step.includes("warten") && status.powered_on} | Brüht: ${step.includes("brühen")}`);
+                    console.log(`Status: ${status.current_step} | An: ${status.powered_on} | Bereit: ${step === "Waiting" && status.powered_on} | Brüht: ${step === "Brew"}`);
                     return;
                 }
 

@@ -24,22 +24,37 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     const [language, setLanguage] = useState<Language>('de');
 
     const translate = (value: string): string => {
-        if (language === 'de') return value;
+        console.log("translate() called with:", value);
+        console.log("Current language:", language);
 
-        const text = texts[language][value as keyof typeof texts['de']];
-        if (typeof text === 'string') {
-            return text;
-        }
-
-        const deStates = texts['de'].state;
+        // Backend sendet Status auf Englisch
         const enStates = texts['en'].state;
+        const currentStates = texts[language].state;
 
-        for (const key in deStates) {
-            if (deStates[key as keyof typeof deStates] === value) {
-                return enStates[key as keyof typeof enStates];
+        // DEBUG: Zeige alle verfügbaren States
+        console.log("Available en states:", enStates);
+        console.log("Available current states:", currentStates);
+
+        for (const key in enStates) {
+            const stateKey = key as keyof typeof enStates;
+            const enValue = enStates[stateKey];
+            console.log(`Checking: ${key} -> en: "${enValue}" vs input: "${value}"`);
+
+            if (enValue === value) {
+                const translatedValue = currentStates[stateKey];
+                console.log(`✓ Found match: ${key} -> ${translatedValue}`);
+                return translatedValue;
             }
         }
 
+        // Normale Übersetzung für andere Texte
+        const text = texts[language][value as keyof typeof texts['de']];
+        if (typeof text === 'string') {
+            console.log("Found in general texts:", text);
+            return text;
+        }
+
+        console.log("No translation found, returning original:", value);
         return value;
     };
 

@@ -40,17 +40,18 @@ const Preparation = () => {
             setWaterLevelIsGood(statusData.water_ok);
             setCoffeeGroundsContainerEmpty(statusData.grounds_ok);
 
-            const step = statusData.current_step.toLowerCase();
+            // Backend sendet jetzt englische Status-Namen
+            const step = statusData.current_step;
 
-            if (step.includes("wasser leer")) {
+            if (step === "Water empty") {
                 showSnackbar(texts.waterTankEmpty, "error");
             }
 
-            if (step.includes("kaffeesatz voll")) {
+            if (step === "Grounds full") {
                 showSnackbar(texts.groundsContainerFull, "error");
             }
 
-            if (step.includes("warten") && isBrewing) {
+            if (step === "Waiting" && isBrewing) {
                 showSnackbar(texts.coffeeReady.replace('{type}', coffeeType), "success");
                 setIsBrewing(false);
             }
@@ -95,7 +96,7 @@ const Preparation = () => {
         setIsBrewing(true);
         showSnackbar(texts.brewingStarted.replace('{type}', coffeeType), "info");
 
-        // Neues Command-Format: "Brew"
+        // Command-Format: "Brew"
         send("Brew");
 
         setTimeout(() => {
@@ -103,8 +104,9 @@ const Preparation = () => {
         }, 50);
 
         setTimeout(() => {
-            const typeCode = coffeeType === texts.espresso ? "2" : "1";
-            send(typeCode);
+            // Backend erwartet "Espresso" oder "Normal" (nicht "1" oder "2")
+            const backendCoffeeType = coffeeType === texts.espresso ? "Espresso" : "Normal";
+            send(backendCoffeeType);
         }, 100);
 
         // Kaffees zur History hinzufügen

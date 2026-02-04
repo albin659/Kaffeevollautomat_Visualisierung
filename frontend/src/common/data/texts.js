@@ -197,14 +197,14 @@ export const texts = {
         temperatureChart: 'Temperature',
         secondsChart: 'Seconds',
         state: {
-            heatingState: 'Heating up',
-            grindingState: 'Grinding',
-            pressingState: 'Pressing',
-            wettingState: 'Wetting',
-            brewingState: 'Brewing',
-            toStartPositionState: 'To Startposition',
-            waitState: 'Waiting',
-            coolingDownState: 'Cooling down',
+            heatingState: "HeatUp",           // war: "Heating up"
+            grindingState: "Grind",            // war: "Grinding"
+            pressingState: "Press",            // war: "Pressing"
+            wettingState: "Moisten",           // war: "Wetting"
+            brewingState: "Brew",              // war: "Brewing"
+            toStartPositionState: "ToStartposition", // war: "To Startposition"
+            waitState: "Waiting",              // ✓ war schon korrekt
+            coolingDownState: "CoolDown"       // war: "Cooling down"
         },
         pressCoffee: 'Press a Coffee',
         strengthText: 'Strength',
