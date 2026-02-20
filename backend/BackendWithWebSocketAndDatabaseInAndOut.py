@@ -45,25 +45,6 @@ async def get_coffee_history():
         return history
     except Exception as e:
         return []
-    
-async def get_status_history(limit: int = 100):
-    try:
-        history = await status_history_collection.find().sort('timestamp', -1).to_list(length=limit)
-        
-        for item in history:
-            if '_id' in item:
-                item['_id'] = str(item['_id'])
-            if 'timestamp' in item and isinstance(item['timestamp'], datetime):
-                item['timestamp'] = item['timestamp'].isoformat()
-            if 'last_updated' in item and isinstance(item['last_updated'], datetime):
-                item['last_updated'] = item['last_updated'].isoformat()
-            if 'current_date' in item and isinstance(item['current_date'], datetime):
-                item['current_date'] = item['current_date'].strftime('%d.%m.%Y')
-        
-        return history
-    except Exception as e:
-        print(f"Error getting status history: {e}")
-        return []
 
 # Step updaten
 async def update_step(step_name: str, water_flow: int = 0, **additional_updates):
@@ -115,15 +96,7 @@ async def save_status_to_history(status_data):
         return False
 
 async def save_coffee_to_history(coffee_data):
-    try:
-        if 'createdDate' in coffee_data and isinstance(coffee_data['createdDate'], str):
-            try:
-                coffee_data['createdDate'] = datetime.fromisoformat(coffee_data['createdDate'].replace('Z', '+00:00'))
-            except:
-                coffee_data['createdDate'] = datetime.now()
-        else:
-            coffee_data['createdDate'] = datetime.now()
-            
+    try:            
         await coffee_history_collection.insert_one(coffee_data)
         return True
     except Exception as e:
