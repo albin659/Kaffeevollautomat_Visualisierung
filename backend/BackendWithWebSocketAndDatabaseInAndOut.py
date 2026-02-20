@@ -140,7 +140,6 @@ async def status_to_json(status):
                 "water_ok": True,
                 "grounds_ok": True,
                 "water_flow": 0,
-                "current_date": date.today().strftime('%d.%m.%Y'),
                 "current_step": "Waiting",
                 "powered_on": False,
                 "cups_since_empty": 0,
@@ -153,8 +152,8 @@ async def status_to_json(status):
     if 'last_updated' in status_copy and isinstance(status_copy['last_updated'], datetime):
         status_copy['last_updated'] = status_copy['last_updated'].isoformat()
     
-    if 'current_date' not in status_copy:
-        status_copy['current_date'] = date.today().strftime('%d.%m.%Y')
+    if 'current_date' in status_copy:
+        del status_copy['current_date']
     
     return {
         "type": "status",
@@ -509,14 +508,13 @@ async def initialize_status_once():
         "powered_on": False,
         "current_step": "Waiting",
         "last_updated": datetime.now(),
-        "current_date": date.today().strftime('%d.%m.%Y')
     }
     await update_status_in_db(initial_status)
     machine_state["last_activity"] = datetime.now()
     machine_state["is_processing"] = False
     machine_state["current_state"] = "ready"
     machine_state["current_task"] = None
-
+    
 # Main
 async def main():
     try:
