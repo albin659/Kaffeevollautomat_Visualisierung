@@ -193,11 +193,6 @@ async def check_auto_standby():
             
         time_since_activity = (datetime.now() - machine_state["last_activity"]).total_seconds()
         
-        if time_since_activity > 60 and machine_state["input_state"] == "ready":
-            current_status = await get_current_status()
-            if current_status and current_status.get('powered_on', False):
-                await update_step("Waiting", 0, powered_on=True)
-        
         if time_since_activity > 120:
             current_status = await get_current_status()
             if current_status and current_status.get('powered_on', False):
