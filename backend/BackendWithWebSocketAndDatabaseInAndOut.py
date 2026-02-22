@@ -13,7 +13,7 @@ status_history_collection = database.StatusHistory
 
 connected_clients = set()
 machine_state = {
-    "current_state": "ready",
+    "input_state": "ready",
     "current_amount": 1,
     "is_processing": False,
     "last_activity": datetime.now(),
@@ -28,6 +28,8 @@ async def get_current_status():
             status_copy = current_status.copy()
             if '_id' in status_copy:
                 status_copy['_id'] = str(status_copy['_id'])
+            if 'last_updated' in status_copy and isinstance(status_copy['last_updated'], datetime):
+                status_copy['last_updated'] = status_copy['last_updated'].isoformat()
             return status_copy
     except Exception as e:
         return None
@@ -80,14 +82,12 @@ async def save_status_to_history(status_data):
         status_copy = status_data.copy()
         if '_id' in status_copy:
             del status_copy['_id']
-        
-        status_copy['timestamp'] = datetime.now()
-        
+                
         await status_history_collection.insert_one(status_copy)
         
         # Alte Einträge löschen, falls Datenbank zu voll wird
         # await status_history_collection.delete_many({
-        #     'timestamp': {'$lt': datetime.now() - timedelta(days=30)}
+        #    'timestamp': {'$lt': datetime.now() - timedelta(days=30)}
         # })
         
         return True
@@ -121,17 +121,7 @@ async def status_to_json(status):
             }
         }
     
-    status_copy = status.copy()
-    if 'last_updated' in status_copy and isinstance(status_copy['last_updated'], datetime):
-        status_copy['last_updated'] = status_copy['last_updated'].isoformat()
-    
-    if 'current_date' in status_copy:
-        del status_copy['current_date']
-    
-    return {
-        "type": "status",
-        "data": status_copy
-    }
+    return json.dumps({"type": "status", "data": status}, default=str)
 
 # Nachricht an Frontend schicken
 async def broadcast_status():
@@ -140,8 +130,7 @@ async def broadcast_status():
     
     try:
         current_status = await get_current_status()
-        json_data = await status_to_json(current_status)
-        message = json.dumps(json_data, default=str)
+        message = await status_to_json(current_status)
         
         disconnected = set()
         for websocket in connected_clients:
@@ -157,8 +146,7 @@ async def broadcast_status():
 async def send_current_status(websocket):
     try:
         current_status = await get_current_status()
-        json_data = await status_to_json(current_status)
-        message = json.dumps(json_data, default=str)
+        message = await status_to_json(current_status)
         await websocket.send(message)
     except Exception as e:
         print(f"Error sending current status: {e}")
@@ -205,7 +193,7 @@ async def check_auto_standby():
             
         time_since_activity = (datetime.now() - machine_state["last_activity"]).total_seconds()
         
-        if time_since_activity > 60 and machine_state["current_state"] == "ready":
+        if time_since_activity > 60 and machine_state["input_state"] == "ready":
             current_status = await get_current_status()
             if current_status and current_status.get('powered_on', False):
                 await update_step("Waiting", 0, powered_on=True)
@@ -396,38 +384,9 @@ coffee_types = {
     "Espresso": {"grinding_steps": 6, "press_steps": 5, "moisting_steps": 2, "brewing_steps": 10, "toStart_steps": 4}
 }
 
-# Frontend Nachrichten verarbeiten
-async def handle_command(option, websocket=None):
-    machine_state["last_activity"] = datetime.now()
-    
-    if option == "HeatUp":
-        asyncio.create_task(simulate_heating())
-        return "ready"
-    elif option == "Brew":
-        await broadcast_status()
-        return "await_amount"
-    elif option == "WaterFillUp":
-        await update_step("Waiting", 0, water_ok=True, cups_since_filled=0, powered_on=True)
-        return "ready"
-    elif option == "GroundClearing":
-        await update_step("Waiting", 0, grounds_ok=True, cups_since_empty=0, powered_on=True)
-        return "ready"
-    elif option == "CoolDown":
-        asyncio.create_task(simulate_cooling())
-        return "ready"
-    elif option == "History":
-        await send_coffee_history_to_all()
-        return "ready"
-    else:
-        current_status = await get_current_status()
-        powered_on = current_status.get('powered_on', True) if current_status else True
-        await update_step("Waiting", 0, powered_on=powered_on)
-        return "ready"
-
 # WebSocket Handler
-async def echo(websocket):
+async def handler(websocket):
     connected_clients.add(websocket)
-    
     await send_current_status(websocket)
     
     try:
@@ -437,32 +396,43 @@ async def echo(websocket):
             if message.startswith('{'):
                 try:
                     data = json.loads(message)
-                    
                     if all(key in data for key in ['id', 'type', 'strength', 'createdDate']):
                         await save_coffee_to_history(data)
                     continue
                 except json.JSONDecodeError:
                     pass
             
-            if machine_state["current_state"] == "await_amount":
+            if machine_state["input_state"] == "await_amount":
                 if message in ["1", "2"]:
                     machine_state["current_amount"] = int(message)
-                    machine_state["current_state"] = "await_coffee_choice"
+                    machine_state["input_state"] = "await_coffee_choice"
                 else:
-                    machine_state["current_state"] = "ready"
-                continue
-                
-            if machine_state["current_state"] == "await_coffee_choice":
+                    machine_state["input_state"] = "ready"
+                    
+            elif machine_state["input_state"] == "await_coffee_choice":
                 if message in coffee_types:
                     asyncio.create_task(
                         simulate_coffee_brewing(message, machine_state["current_amount"])
                     )
-                    
-                machine_state["current_state"] = "ready"
-                continue
+                machine_state["input_state"] = "ready"
                 
-            if machine_state["current_state"] == "ready":
-                machine_state["current_state"] = await handle_command(message, websocket)
+            elif machine_state["input_state"] == "ready":
+                if message == "Brew":
+                    machine_state["input_state"] = "await_amount"
+                elif message == "HeatUp":
+                    asyncio.create_task(simulate_heating())
+                elif message == "CoolDown":
+                    asyncio.create_task(simulate_cooling())
+                elif message == "WaterFillUp":
+                    await update_step("Waiting", 0, water_ok=True, cups_since_filled=0)
+                elif message == "GroundClearing":
+                    await update_step("Waiting", 0, grounds_ok=True, cups_since_empty=0)
+                elif message == "History":
+                    await send_coffee_history_to_all()
+                else:
+                    current_status = await get_current_status()
+                    powered_on = current_status.get('powered_on', True) if current_status else True
+                    await update_step("Waiting", 0, powered_on=powered_on)
     
     except websockets.exceptions.ConnectionClosed:
         pass
@@ -485,7 +455,7 @@ async def initialize_status_once():
     await update_status_in_db(initial_status)
     machine_state["last_activity"] = datetime.now()
     machine_state["is_processing"] = False
-    machine_state["current_state"] = "ready"
+    machine_state["input_state"] = "ready"
     machine_state["current_task"] = None
     
 # Main
@@ -502,7 +472,7 @@ async def main():
         print(f"Error initializing: {e}")
         return
     
-    async with websockets.serve(echo, "localhost", 8765):
+    async with websockets.serve(handler, "localhost", 8765):
         await asyncio.Future()
 
 if __name__ == "__main__":
