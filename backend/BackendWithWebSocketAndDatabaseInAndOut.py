@@ -248,7 +248,7 @@ async def simulate_heating():
             progress = second / remaining_seconds
             new_temp = current_temp + (current_temp_diff * progress)
             
-            current_water_flow = 5 if second >= (remaining_seconds - 15) and second <= remaining_seconds else 0
+            current_water_flow = 3 if second >= (remaining_seconds - 15) and second <= remaining_seconds else 0
             
             await update_step(
                 "HeatUp",
@@ -334,7 +334,9 @@ async def simulate_coffee_brewing(coffee_type: str, amount: int):
         steps = [
             ("Grind", coffee_info.get('grinding_steps', 6)),
             ("Press", coffee_info.get('press_steps', 5)),
+            ("Rest", coffee_info.get('rest_steps1', 3)),
             ("Moisten", coffee_info.get('moisting_steps', 2)),
+            ("Rest", coffee_info.get('rest_steps2', 4)),
             ("Brew", coffee_info.get('brewing_steps', 14) * amount),
             ("ToStartposition", coffee_info.get('toStart_steps', 4))
         ]
@@ -344,7 +346,8 @@ async def simulate_coffee_brewing(coffee_type: str, amount: int):
                 if machine_state["current_task"] != asyncio.current_task():
                     return False
                     
-                water_flow = 5 if step_name in ["Moisten", "Brew"] else 0
+                water_flow = 5 if step_name == "Brew" else 0
+                water_flow = 1 if step_name == "Moisten" else 0
                 await update_step(step_name, water_flow, powered_on=True)
                 await asyncio.sleep(1)
         
@@ -375,8 +378,8 @@ async def simulate_coffee_brewing(coffee_type: str, amount: int):
         await cleanup_machine_task()
 
 coffee_types = {
-    "Normal": {"grinding_steps": 6, "press_steps": 5, "moisting_steps": 2, "brewing_steps": 14, "toStart_steps": 4},
-    "Espresso": {"grinding_steps": 6, "press_steps": 5, "moisting_steps": 2, "brewing_steps": 10, "toStart_steps": 4}
+    "Normal": {"grinding_steps": 6, "press_steps": 5, "rest_steps1":3 , "moisting_steps": 2, "rest_steps2":4, "brewing_steps": 14, "toStart_steps": 4},
+    "Espresso": {"grinding_steps": 6, "press_steps": 5,"rest_steps1":3, "moisting_steps": 2, "rest_steps2":4, "brewing_steps": 10, "toStart_steps": 4}
 }
 
 # WebSocket Handler
