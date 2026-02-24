@@ -14,7 +14,7 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 
 const Dashboard = () => {
-    const { send, isConnected, isOn, setIsOn, setIsReady, isReady, isBrewing, coffeeHistory } = useWebSocket();
+    const { send, isConnected, isOn, setIsOn, setIsReady, isReady, isBrewing, coffeeHistory, isResting } = useWebSocket();
     const { texts } = useLanguage();
     const [initialized, setInitialized] = useState(false);
 
@@ -63,6 +63,7 @@ const Dashboard = () => {
     const getStatusText = () => {
         if (!isConnected) return texts.notConnected;
         if (isBrewing) return texts.brewing;
+        if (isResting) return texts.resting;
         if (isReady) return texts.ready;
         if (isOn) return texts.heating;
         return texts.turnedOff;

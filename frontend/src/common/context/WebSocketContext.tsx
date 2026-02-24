@@ -11,6 +11,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const [isOn, setIsOn] = useState(false);
     const [isReady, setIsReady] = useState(false);
     const [isBrewing, setIsBrewing] = useState(false);
+    const [isResting, setIsResting] = useState(false);
     const [coffeeHistory, setCoffeeHistory] = useState<ICoffee[]>([]);
     const [statusData, setStatusData] = useState<IStatusData | null>(null);
 
@@ -55,6 +56,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             setIsOn(false);
             setIsReady(false);
             setIsBrewing(false);
+            setIsResting(false);
             setLogs(prev => [...prev, "Verbindung getrennt"]);
         };
 
@@ -78,29 +80,40 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                     const step = status.current_step;
                     setIsOn(status.powered_on);
 
-                    // Brühvorgang erkennen (exakte Backend-Bezeichnungen)
+                    // Brühvorgang
                     if (step === "Grind" || step === "Press" ||
                         step === "Moisten" || step === "Brew" ||
                         step === "ToStartposition") {
+                        console.log(">>> SETZT isBrewing auf TRUE für:", step);  // ← das hinzufügen
                         setIsBrewing(true);
                         setIsReady(false);
+                        setIsResting(false);
                     }
-                    // Bereit-Status
-                    else if (step === "Waiting" && status.powered_on) {
-                        setIsReady(true);
+                    // Bereit
+                    else if (step === "Waiting") {
+                        setIsReady(status.powered_on);
                         setIsBrewing(false);
+                        setIsResting(false);
                     }
                     // Aufheizen
                     else if (step === "HeatUp") {
                         setIsReady(false);
                         setIsBrewing(false);
+                        setIsResting(false);
                     }
-                    // Abkühlen oder Fehler
-                    else {
+                    // Ruhezustand
+                    else if (step === "Rest") {
+                        setIsResting(true);
+                    }
+                    // Abkühlen
+                    else if (step === "CoolDown") {
                         setIsReady(false);
-                        if (step === "CoolDown") {
-                            setIsBrewing(false);
-                        }
+                        setIsResting(false);
+                        setIsBrewing(false);
+                    }
+                    // Unbekannter/leerer Step → State einfrieren, nichts resetten
+                    else if (step) {
+                        console.warn("Unbekannter Step empfangen, State wird eingefroren:", step);
                     }
 
                     console.log(`Status: ${status.current_step} | An: ${status.powered_on} | Bereit: ${step === "Waiting" && status.powered_on} | Brüht: ${step === "Brew"}`);
@@ -197,6 +210,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 isOn,
                 isReady,
                 isBrewing,
+                isResting,
                 logs,
                 coffeeHistory,
                 statusData,
