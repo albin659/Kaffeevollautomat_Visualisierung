@@ -1,5 +1,11 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 
+const WS_URL = "ws://localhost:8765";
+const HISTORY_RELOAD_DELAY = 1000;
+const HISTORY_INITIAL_DELAY = 500;
+
+const BREWING_STEPS = ["Grind", "Press", "Moisten", "Brew", "ToStartposition"];
+
 const WebSocketContext = createContext<IWebSocketContext | null>(null);
 
 export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -15,187 +21,126 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const [coffeeHistory, setCoffeeHistory] = useState<ICoffee[]>([]);
     const [statusData, setStatusData] = useState<IStatusData | null>(null);
 
-    // History nach Brühvorgang neu laden
-    const reloadBrewing=()=>{
+    const send = (msg: string) => {
+        if (ws.current?.readyState === WebSocket.OPEN) {
+            ws.current.send(msg);
+        }
+    };
+
+    const reloadBrewingHistory = () => {
         if (lastBrewingState.current && !isBrewing) {
-            console.log("Brühvorgang beendet - lade History neu");
-            setTimeout(() => {
-                if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-                    ws.current.send("History");
-                }
-            }, 1000);
+            setTimeout(() => send("History"), HISTORY_RELOAD_DELAY);
         }
         lastBrewingState.current = isBrewing;
-    }
+    };
 
     useEffect(() => {
-        reloadBrewing();
+        reloadBrewingHistory();
     }, [isBrewing]);
 
+    const handleStatusMessage = (status: IStatusData) => {
+        setStatusData(status);
+
+        const logEntry = `${status.current_step},${status.temperature},${status.water_ok ? "1" : "0"},${status.grounds_ok ? "1" : "0"},${status.water_flow}`;
+        setLogs((prev) => [...prev, logEntry]);
+
+        const step = status.current_step;
+        setIsOn(status.powered_on);
+
+        if (BREWING_STEPS.includes(step)) {
+            setIsBrewing(true);
+            setIsReady(false);
+            setIsResting(false);
+        } else if (step === "Waiting") {
+            setIsReady(status.powered_on);
+            setIsBrewing(false);
+            setIsResting(false);
+        } else if (step === "HeatUp") {
+            setIsReady(false);
+            setIsBrewing(false);
+            setIsResting(false);
+        } else if (step === "Rest") {
+            setIsResting(true);
+        } else if (step === "CoolDown") {
+            setIsReady(false);
+            setIsResting(false);
+            setIsBrewing(false);
+        }
+    };
+
+    const handleCoffeeHistoryMessage = (data: any[]) => {
+        const formattedHistory: ICoffee[] = data.map((item) => ({
+            id: item.id || Date.now(),
+            type: item.type || "Unknown",
+            strength: item.strength || 3,
+            createdDate: item.createdDate || new Date().toISOString(),
+        }));
+
+        formattedHistory.sort(
+            (a, b) => new Date(a.createdDate).getTime() - new Date(b.createdDate).getTime()
+        );
+
+        setCoffeeHistory(formattedHistory);
+    };
+
     useEffect(() => {
-        console.log("Verbindungsaufbau zu WebSocket...");
-        ws.current = new WebSocket("ws://localhost:8765");
+        ws.current = new WebSocket(WS_URL);
 
         ws.current.onopen = () => {
-            console.log("WebSocket verbunden");
             setIsConnected(true);
-            setLogs(prev => [...prev, "Mit Backend verbunden"]);
-
-            // History initial anfordern
-            setTimeout(() => {
-                if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-                    console.log("Fordere Coffee History an");
-                    ws.current.send("History");
-                }
-            }, 500);
+            setLogs((prev) => [...prev, "Connected to backend"]);
+            setTimeout(() => send("History"), HISTORY_INITIAL_DELAY);
         };
 
         ws.current.onclose = () => {
-            console.log("WebSocket getrennt");
             setIsConnected(false);
             setIsOn(false);
             setIsReady(false);
             setIsBrewing(false);
             setIsResting(false);
-            setLogs(prev => [...prev, "Verbindung getrennt"]);
+            setLogs((prev) => [...prev, "Connection lost"]);
         };
 
         ws.current.onmessage = (event) => {
-            const message = event.data;
-            console.log("Nachricht empfangen:", message);
-
             try {
-                const data = JSON.parse(message);
+                const data = JSON.parse(event.data);
 
-                // Status-Update verarbeiten
                 if (data.type === "status" && data.data) {
-                    const status: IStatusData = data.data;
-                    setStatusData(status);
-
-                    // Log für Analytics erstellen (CSV-Format für Kompatibilität)
-                    const logEntry = `${status.current_step},${status.temperature},${status.water_ok ? '1' : '0'},${status.grounds_ok ? '1' : '0'},${status.water_flow}`;
-                    setLogs(prev => [...prev, logEntry]);
-
-                    // Maschinen-Status aktualisieren
-                    const step = status.current_step;
-                    setIsOn(status.powered_on);
-
-                    // Brühvorgang
-                    if (step === "Grind" || step === "Press" ||
-                        step === "Moisten" || step === "Brew" ||
-                        step === "ToStartposition") {
-                        console.log(">>> SETZT isBrewing auf TRUE für:", step);  // ← das hinzufügen
-                        setIsBrewing(true);
-                        setIsReady(false);
-                        setIsResting(false);
-                    }
-                    // Bereit
-                    else if (step === "Waiting") {
-                        setIsReady(status.powered_on);
-                        setIsBrewing(false);
-                        setIsResting(false);
-                    }
-                    // Aufheizen
-                    else if (step === "HeatUp") {
-                        setIsReady(false);
-                        setIsBrewing(false);
-                        setIsResting(false);
-                    }
-                    // Ruhezustand
-                    else if (step === "Rest") {
-                        setIsResting(true);
-                    }
-                    // Abkühlen
-                    else if (step === "CoolDown") {
-                        setIsReady(false);
-                        setIsResting(false);
-                        setIsBrewing(false);
-                    }
-                    // Unbekannter/leerer Step → State einfrieren, nichts resetten
-                    else if (step) {
-                        console.warn("Unbekannter Step empfangen, State wird eingefroren:", step);
-                    }
-
-                    console.log(`Status: ${status.current_step} | An: ${status.powered_on} | Bereit: ${step === "Waiting" && status.powered_on} | Brüht: ${step === "Brew"}`);
+                    handleStatusMessage(data.data);
                     return;
                 }
 
-                // Coffee History verarbeiten
                 if (data.type === "coffee_history" && Array.isArray(data.data)) {
-                    console.log("Coffee History erhalten:", data.data.length, "Einträge");
-
-                    const formattedHistory: ICoffee[] = data.data.map((item: any) => ({
-                        id: item.id || Date.now(),
-                        type: item.type || "Unbekannt",
-                        strength: item.strength || 3,
-                        createdDate: item.createdDate || new Date().toISOString()
-                    }));
-
-                    formattedHistory.sort((a, b) =>
-                        new Date(a.createdDate).getTime() - new Date(b.createdDate).getTime()
-                    );
-
-                    setCoffeeHistory(formattedHistory);
+                    handleCoffeeHistoryMessage(data.data);
                     return;
                 }
-
             } catch (err) {
-                console.error("Fehler beim Parsen der JSON-Nachricht:", err);
+                console.error("Failed to parse WebSocket message:", err);
             }
         };
 
         ws.current.onerror = (err) => {
-            console.error("WebSocket Fehler:", err);
+            console.error("WebSocket error:", err);
         };
 
         return () => {
-            if (ws.current) ws.current.close();
+            ws.current?.close();
         };
     }, []);
 
-    const send = (msg: string) => {
-        if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-            console.log("Sende Nachricht:", msg);
-            ws.current.send(msg);
-        } else {
-            console.warn("Keine Verbindung – Nachricht nicht gesendet:", msg);
-        }
-    };
-
     const addCoffeeToHistory = (entry: ICoffee) => {
-        console.log("Neuer Kaffee wird zum Backend gesendet:", entry);
-
-        setCoffeeHistory(prev => {
-            const exists = prev.some(coffee => coffee.id === entry.id);
-            if (exists) {
-                console.log("Kaffee bereits vorhanden, überspringe");
-                return prev;
-            }
-
-            const updated = [...prev, entry];
-            console.log("Kaffee lokal hinzugefügt. Neue Anzahl:", updated.length);
-            return updated;
+        setCoffeeHistory((prev) => {
+            const exists = prev.some((coffee) => coffee.id === entry.id);
+            if (exists) return prev;
+            return [...prev, entry];
         });
 
-        if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-            const coffeeData = {
-                id: entry.id,
-                type: entry.type,
-                strength: entry.strength,
-                createdDate: entry.createdDate
-            };
-
-            ws.current.send(JSON.stringify(coffeeData));
-            console.log("Kaffee an Backend gesendet:", coffeeData);
-        } else {
-            console.warn("Konnte Kaffee nicht an Backend senden - keine Verbindung");
+        if (ws.current?.readyState === WebSocket.OPEN) {
+            ws.current.send(JSON.stringify(entry));
         }
     };
 
-    const requestHistoryUpdate = () => {
-        console.log("History-Update vom Backend angefordert");
-        send("History");
-    };
+    const requestHistoryUpdate = () => send("History");
 
     return (
         <WebSocketContext.Provider
@@ -214,7 +159,8 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 logs,
                 coffeeHistory,
                 statusData,
-            }}>
+            }}
+        >
             {children}
         </WebSocketContext.Provider>
     );
@@ -223,7 +169,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 export const useWebSocket = () => {
     const ctx = useContext(WebSocketContext);
     if (!ctx) {
-        throw new Error("useWebSocket muss in WebSocketProvider genutzt werden!");
+        throw new Error("useWebSocket must be used inside WebSocketProvider!");
     }
     return ctx;
 };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useWebSocket } from "../../common/context/WebSocketContext";
 import { useLanguage } from "../../common/context/LanguageContext";
+import { isToday } from "../../common/utils/dateUtils";
 import "./Dashboard.css";
 
 import CoffeeIcon from '@mui/icons-material/Coffee';
@@ -12,6 +13,15 @@ import BuildIcon from '@mui/icons-material/Build';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
+import PageHeader from "../layout/PageHeader";
+
+const FEATURES = [
+    "realtimeMonitoring",
+    "temperatureFlow",
+    "brewingProcess",
+    "statisticsExport",
+    "coffeeHistory",
+] as const;
 
 const Dashboard = () => {
     const { send, isConnected, isOn, setIsOn, setIsReady, isReady, isBrewing, coffeeHistory, isResting } = useWebSocket();
@@ -20,92 +30,75 @@ const Dashboard = () => {
 
     useEffect(() => {
         if (isConnected && !initialized) {
-            // Fordere initialen Status an (beliebiger Command triggert Status-Broadcast)
             send("History");
             setInitialized(true);
         }
     }, [isConnected, initialized, send]);
 
     const toggleMachine = () => {
-        console.log("Button gedrückt: ToggleMachine");
-        if (!isConnected) {
-            console.warn("Maschine nicht verbunden");
-            return;
-        }
+        if (!isConnected) return;
 
         if (!isOn) {
-            console.log("Einschalten & Aufheizen");
             send("HeatUp");
             setIsOn(true);
             setIsReady(false);
         } else {
-            console.log("Ausschalten - Abkühlen läuft im Hintergrund");
             send("CoolDown");
             setIsOn(false);
             setIsReady(false);
         }
     };
 
-    const todaysCoffees = coffeeHistory.filter(coffee => {
-        const coffeeDate = new Date(coffee.createdDate).toDateString();
-        const today = new Date().toDateString();
-        return coffeeDate === today;
-    });
+    const todaysCoffees = coffeeHistory.filter((coffee) => isToday(coffee.createdDate));
 
     const getStatusColor = () => {
         if (!isConnected) return "#6c757d";
-        if (isBrewing) return "#ffc107";
-        if (isReady) return "#28a745";
-        if (isOn) return "#17a2b8";
+        if (isBrewing)    return "#ffc107";
+        if (isReady)      return "#28a745";
+        if (isOn)         return "#17a2b8";
         return "#6c757d";
     };
 
     const getStatusText = () => {
         if (!isConnected) return texts.notConnected;
-        if (isBrewing) return texts.brewing;
-        if (isResting) return texts.resting;
-        if (isReady) return texts.ready;
-        if (isOn) return texts.heating;
+        if (isBrewing)    return texts.brewing;
+        if (isResting)    return texts.resting;
+        if (isReady)      return texts.ready;
+        if (isOn)         return texts.heating;
         return texts.turnedOff;
     };
 
     const getButtonText = () => {
         if (!isConnected) return texts.connecting;
-        if (isOn) return texts.turnMachineOff;
+        if (isOn)         return texts.turnMachineOff;
         return texts.turnMachineOn;
     };
 
+    const statusColor = getStatusColor();
+
     return (
         <div className="dashboard-container">
-            {/* Hero Header */}
-            <div className="dashboard-hero">
-                <div className="hero-content">
-                    <h1 className="hero-title">{texts.dashboard}</h1>
-                    <p className="hero-subtitle">{texts.coffeeMachineControl}</p>
-                </div>
-            </div>
+            <PageHeader title={texts.dashboard} subtitle={texts.coffeeMachineControl} />
 
-            {/* Status Karten Grid */}
+            {/* Status Cards */}
             <div className="status-grid">
-                {/* Maschinen-Status */}
                 <div className="status-card status-card-primary">
                     <div className="status-card-header">
-                        <div className="status-icon" style={{ backgroundColor: getStatusColor() }}>
+                        <div className="status-icon" style={{ backgroundColor: statusColor }}>
                             <CoffeeIcon style={{ fontSize: 28, color: "white" }} />
                         </div>
                     </div>
                     <div className="status-card-body">
                         <p className="status-label">{texts.machineStatus}</p>
-                        <h3 className="status-value" style={{ color: getStatusColor() }}>
+                        <h3 className="status-value" style={{ color: statusColor }}>
                             {!initialized && isConnected ? texts.statusChecking : getStatusText()}
                         </h3>
                     </div>
                     <div className="status-card-footer">
-                        <div className="status-indicator" style={{ backgroundColor: getStatusColor() }}></div>
+                        <div className="status-indicator" style={{ backgroundColor: statusColor }} />
                     </div>
                 </div>
 
-                {/* Heute Gebrüht */}
                 <div className="status-card">
                     <div className="status-card-header">
                         <div className="status-icon" style={{ backgroundColor: "#162a4f" }}>
@@ -118,7 +111,6 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* Gesamt Gebrüht */}
                 <div className="status-card">
                     <div className="status-card-header">
                         <div className="status-icon" style={{ backgroundColor: "#5a6268" }}>
@@ -131,7 +123,6 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* Verbindung */}
                 <div className="status-card">
                     <div className="status-card-header">
                         <div className="status-icon" style={{ backgroundColor: isConnected ? "#28a745" : "#dc3545" }}>
@@ -147,7 +138,7 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* Steuerung */}
+            {/* Machine Control */}
             <div className="control-panel">
                 <div className="control-panel-inner">
                     <h2 className="control-title">{texts.machineControl}</h2>
@@ -157,22 +148,15 @@ const Dashboard = () => {
                         disabled={!isConnected}
                     >
                         <span className="button-icon">
-                            {isOn ? (
-                                <StopIcon style={{ fontSize: 24 }} />
-                            ) : (
-                                <PlayArrowIcon style={{ fontSize: 24 }} />
-                            )}
+                            {isOn ? <StopIcon style={{ fontSize: 24 }} /> : <PlayArrowIcon style={{ fontSize: 24 }} />}
                         </span>
-                        <span className="button-text">
-                            {getButtonText()}
-                        </span>
+                        <span className="button-text">{getButtonText()}</span>
                     </button>
                 </div>
             </div>
 
-            {/* Info Karten */}
+            {/* Info Cards */}
             <div className="info-section">
-                {/* Über dieses Projekt */}
                 <div className="info-card-modern">
                     <div className="info-header">
                         <SchoolIcon style={{ fontSize: 24, color: "#1976d2" }} />
@@ -184,48 +168,30 @@ const Dashboard = () => {
                     </p>
                 </div>
 
-                {/* Technologie-Stack */}
                 <div className="info-card-modern">
                     <div className="info-header">
                         <BuildIcon style={{ fontSize: 24, color: "#1976d2" }} />
                         <h3 className="info-title">{texts.technologyStack}</h3>
                     </div>
                     <div className="tech-grid">
-                        <span className="tech-badge">React + TypeScript</span>
-                        <span className="tech-badge">WebSocket</span>
-                        <span className="tech-badge">Raspberry Pi</span>
-                        <span className="tech-badge">Python + MongoDB</span>
-                        <span className="tech-badge">Chart.js</span>
+                        {["React + TypeScript", "WebSocket", "Raspberry Pi", "Python + MongoDB", "Chart.js"].map((tech) => (
+                            <span key={tech} className="tech-badge">{tech}</span>
+                        ))}
                     </div>
                 </div>
 
-                {/* Funktionen */}
                 <div className="info-card-modern">
                     <div className="info-header">
                         <AnalyticsIcon style={{ fontSize: 24, color: "#1976d2" }} />
                         <h3 className="info-title">{texts.features}</h3>
                     </div>
                     <ul className="feature-list-modern">
-                        <li>
-                            <span className="check-icon">✓</span>
-                            <span>{texts.realtimeMonitoring}</span>
-                        </li>
-                        <li>
-                            <span className="check-icon">✓</span>
-                            <span>{texts.temperatureFlow}</span>
-                        </li>
-                        <li>
-                            <span className="check-icon">✓</span>
-                            <span>{texts.brewingProcess}</span>
-                        </li>
-                        <li>
-                            <span className="check-icon">✓</span>
-                            <span>{texts.statisticsExport}</span>
-                        </li>
-                        <li>
-                            <span className="check-icon">✓</span>
-                            <span>{texts.coffeeHistory}</span>
-                        </li>
+                        {FEATURES.map((key) => (
+                            <li key={key}>
+                                <span className="check-icon">✓</span>
+                                <span>{texts[key]}</span>
+                            </li>
+                        ))}
                     </ul>
                 </div>
             </div>

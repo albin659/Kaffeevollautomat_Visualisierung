@@ -2,11 +2,13 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Switch } from '@mui/material';
 import './Menubar.css';
+
 import HomeIcon from '@mui/icons-material/Home';
 import LocalCafeIcon from '@mui/icons-material/LocalCafe';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import HistoryIcon from '@mui/icons-material/History';
 import DescriptionIcon from '@mui/icons-material/Description';
+
 import {useLanguage} from "../../common/context/LanguageContext";
 
 const MenuBar = () => {
@@ -18,7 +20,6 @@ const MenuBar = () => {
 
     return (
         <div className="menu-bar d-flex flex-column align-items-center bg-white vh-100 shadow">
-            {/* Logo */}
             <div className="text-center mb-4">
                 <img
                     src="/kaffeemaschine_logo.png"
@@ -28,7 +29,6 @@ const MenuBar = () => {
                 />
                 <div className="logo-text">{texts.menuBarLogoText}</div>
 
-                {/* Language Switch mit Flaggen */}
                 <div className="language-switch mt-3 d-flex align-items-center justify-content-center gap-2">
                     <span style={{
                         opacity: language === 'de' ? 1 : 0.5,
@@ -75,7 +75,6 @@ const MenuBar = () => {
                 <div className="logo-separator"></div>
             </div>
 
-            {/* Navigation */}
             <ul className="nav flex-column w-100">
                 <li className="nav-item">
                     <Link className={`nav-link ${isActive("/dashboard")}`} to="/dashboard">
