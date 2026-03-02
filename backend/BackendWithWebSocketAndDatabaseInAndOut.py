@@ -193,7 +193,7 @@ async def check_auto_standby():
             
         time_since_activity = (datetime.now() - machine_state["last_activity"]).total_seconds()
         
-        if time_since_activity > 1800:
+        if time_since_activity > 120:
             current_status = await get_current_status()
             if current_status and current_status.get('powered_on', False):
                 asyncio.create_task(simulate_cooling())
@@ -285,7 +285,7 @@ async def simulate_cooling():
         total_temp_diff = 94 - target_temp  
         current_temp_diff = current_temp - target_temp 
         progress = (total_temp_diff - current_temp_diff) / total_temp_diff
-        total_seconds = 3600 
+        total_seconds = 180
         remaining_seconds = int((1 - progress) * total_seconds)
         
         await update_step("CoolDown", 0, powered_on=False)
