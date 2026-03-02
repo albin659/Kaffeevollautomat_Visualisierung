@@ -1,33 +1,22 @@
 import React from "react";
-import { Button, Card } from "react-bootstrap";
+import { Button } from "react-bootstrap";
 import { useWebSocket } from "../../common/context/WebSocketContext";
 import { useLanguage } from "../../common/context/LanguageContext";
+import { getDateString, getWeekData } from "../../common/utils/dateUtils";
+import PageHeader from "../../_views/layout/PageHeader";
 import "./Report.css";
 
-// MUI Icons importieren
 import DescriptionIcon from '@mui/icons-material/Description';
-import ComputerIcon from '@mui/icons-material/Computer';
 import DownloadIcon from '@mui/icons-material/Download';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import DateRangeIcon from '@mui/icons-material/DateRange';
 
-// Datum im Format YYYY-MM-DD
-const getDateString = () => {
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, "0");
-    const dd = String(now.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-};
-
-// CSV Export
 const exportCSV = (data: any[], filenamePrefix: string, headerLabels: string[]) => {
-    const header = headerLabels;
     const rows = data.map((c) => [c.id, c.type, c.strength, c.createdDate]);
     const csvContent =
         "data:text/csv;charset=utf-8," +
-        [header, ...rows].map((row) => row.join(",")).join("\n");
+        [headerLabels, ...rows].map((row) => row.join(",")).join("\n");
 
     const link = document.createElement("a");
     link.href = encodeURI(csvContent);
@@ -37,61 +26,21 @@ const exportCSV = (data: any[], filenamePrefix: string, headerLabels: string[]) 
     document.body.removeChild(link);
 };
 
-// Montag–Sonntag einer Woche holen
-const getWeekData = (data: any[]) => {
-    const today = new Date();
-    const currentDay = today.getDay();
-    const diffToMonday = (currentDay + 6) % 7;
-    const monday = new Date(today);
-    monday.setDate(today.getDate() - diffToMonday);
-    monday.setHours(0, 0, 0, 0);
-
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    sunday.setHours(23, 59, 59, 999);
-
-    return data.filter((c) => {
-        const d = new Date(c.createdDate);
-        return d >= monday && d <= sunday;
-    });
-};
-
 const Report: React.FC = () => {
     const { coffeeHistory } = useWebSocket();
     const { texts } = useLanguage();
 
-    const handleExportAll = () => {
-        const headerLabels = [
-            texts.csvHeaderId,
-            texts.csvHeaderType,
-            texts.csvHeaderStrength,
-            texts.csvHeaderDate
-        ];
-        exportCSV(coffeeHistory, "coffee_report_all", headerLabels);
-    };
+    const weekData = getWeekData(coffeeHistory);
+    const csvHeaders = [texts.csvHeaderId, texts.csvHeaderType, texts.csvHeaderStrength, texts.csvHeaderDate];
 
-    const handleExportWeek = () => {
-        const weekData = getWeekData(coffeeHistory);
-        const headerLabels = [
-            texts.csvHeaderId,
-            texts.csvHeaderType,
-            texts.csvHeaderStrength,
-            texts.csvHeaderDate
-        ];
-        exportCSV(weekData, "coffee_report_week", headerLabels);
-    };
+    const handleExportAll  = () => exportCSV(coffeeHistory, "coffee_report_all",  csvHeaders);
+    const handleExportWeek = () => exportCSV(weekData,      "coffee_report_week", csvHeaders);
 
     return (
         <div className="dashboard-container">
-            {/* Hero Header */}
-            <div className="dashboard-hero">
-                <div className="hero-content">
-                    <h1 className="hero-title">{texts.reportTitle}</h1>
-                    <p className="hero-subtitle">{texts.reportSubtitle}</p>
-                </div>
-            </div>
+            <PageHeader title={texts.reportTitle} subtitle={texts.reportSubtitle} />
 
-            {/* Statistik Karten */}
+            {/* Stats Cards */}
             <div className="status-grid">
                 <div className="status-card status-card-primary">
                     <div className="status-card-header">
@@ -113,34 +62,26 @@ const Report: React.FC = () => {
                     </div>
                     <div className="status-card-body">
                         <p className="status-label">{texts.thisWeek}</p>
-                        <h3 className="status-value">{getWeekData(coffeeHistory).length}</h3>
+                        <h3 className="status-value">{weekData.length}</h3>
                     </div>
                 </div>
             </div>
 
-            {/* Export Karten */}
+            {/* Export Cards */}
             <div className="info-section">
                 <div className="info-card-modern">
                     <div className="info-header">
                         <AnalyticsIcon style={{ fontSize: 24, color: "#1976d2" }} />
                         <h3 className="info-title">{texts.completeDataExport}</h3>
                     </div>
-                    <p className="info-text">
-                        {texts.completeDataExportDescription}
-                    </p>
-                    <div className="status-card-footer" style={{marginTop: '1rem', height: '2px'}}>
-                        <div className="status-indicator" style={{backgroundColor: '#162a4f', width: '100%'}}></div>
+                    <p className="info-text">{texts.completeDataExportDescription}</p>
+                    <div className="status-card-footer" style={{ marginTop: "1rem", height: "2px" }}>
+                        <div className="status-indicator" style={{ backgroundColor: "#162a4f", width: "100%" }} />
                     </div>
-                    <Button
-                        className="control-button-modern"
-                        onClick={handleExportAll}
-                        style={{marginTop: '1.5rem', width: '100%'}}
-                    >
-                        <span className="button-icon">
-                            <DownloadIcon style={{ fontSize: 20 }} />
-                        </span>
+                    <Button className="control-button-modern" onClick={handleExportAll} style={{ marginTop: "1.5rem", width: "100%" }}>
+                        <span className="button-icon"><DownloadIcon style={{ fontSize: 20 }} /></span>
                         <span className="button-text">
-                            {texts.exportAllData.replace('{count}', coffeeHistory.length.toString())}
+                            {texts.exportAllData.replace("{count}", coffeeHistory.length.toString())}
                         </span>
                     </Button>
                 </div>
@@ -150,22 +91,14 @@ const Report: React.FC = () => {
                         <CalendarTodayIcon style={{ fontSize: 24, color: "#1976d2" }} />
                         <h3 className="info-title">{texts.weekExport}</h3>
                     </div>
-                    <p className="info-text">
-                        {texts.weekExportDescription}
-                    </p>
-                    <div className="status-card-footer" style={{marginTop: '1rem', height: '2px'}}>
-                        <div className="status-indicator" style={{backgroundColor: '#28a745', width: '100%'}}></div>
+                    <p className="info-text">{texts.weekExportDescription}</p>
+                    <div className="status-card-footer" style={{ marginTop: "1rem", height: "2px" }}>
+                        <div className="status-indicator" style={{ backgroundColor: "#28a745", width: "100%" }} />
                     </div>
-                    <Button
-                        className="control-button-modern active"
-                        onClick={handleExportWeek}
-                        style={{marginTop: '1.5rem', width: '100%'}}
-                    >
-                        <span className="button-icon">
-                            <DownloadIcon style={{ fontSize: 20 }} />
-                        </span>
+                    <Button className="control-button-modern active" onClick={handleExportWeek} style={{ marginTop: "1.5rem", width: "100%" }}>
+                        <span className="button-icon"><DownloadIcon style={{ fontSize: 20 }} /></span>
                         <span className="button-text">
-                            {texts.exportWeekData.replace('{count}', getWeekData(coffeeHistory).length.toString())}
+                            {texts.exportWeekData.replace("{count}", weekData.length.toString())}
                         </span>
                     </Button>
                 </div>

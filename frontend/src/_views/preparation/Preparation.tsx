@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useWebSocket } from "../../common/context/WebSocketContext";
 import { useLanguage } from "../../common/context/LanguageContext";
+import { isToday } from "../../common/utils/dateUtils";
+import PageHeader from "../../_views/layout/PageHeader";
 import "./Preperation.css";
 
 import { Snackbar, Alert } from "@mui/material";
@@ -19,6 +21,10 @@ import LocalCafeIcon from '@mui/icons-material/LocalCafe';
 import BoltIcon from '@mui/icons-material/Bolt';
 import HistoryIcon from '@mui/icons-material/History';
 
+const BREW_DELAYS = { amount: 50, type: 100, history: 200 };
+
+type SnackbarSeverity = "success" | "error" | "warning" | "info";
+
 const Preparation = () => {
     const { send, statusData, isOn, isReady, isBrewing, setIsBrewing, coffeeHistory, addCoffeeToHistory } = useWebSocket();
     const { texts } = useLanguage();
@@ -26,101 +32,58 @@ const Preparation = () => {
     const [coffeeType, setCoffeeType] = useState<string>(texts.espresso);
     const [amount, setAmount] = useState<number>(1);
     const [strength, setStrength] = useState<number>(3);
-
     const [waterLevelIsGood, setWaterLevelIsGood] = useState<boolean>(true);
     const [coffeeGroundsContainerEmpty, setCoffeeGroundsContainerEmpty] = useState<boolean>(true);
 
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState("");
-    const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error" | "warning" | "info">("info");
+    const [snackbarSeverity, setSnackbarSeverity] = useState<SnackbarSeverity>("info");
 
-    // Status aus dem statusData-Objekt extrahieren
     useEffect(() => {
-        if (statusData) {
-            setWaterLevelIsGood(statusData.water_ok);
-            setCoffeeGroundsContainerEmpty(statusData.grounds_ok);
+        if (!statusData) return;
 
-            // Backend sendet jetzt englische Status-Namen
-            const step = statusData.current_step;
+        setWaterLevelIsGood(statusData.water_ok);
+        setCoffeeGroundsContainerEmpty(statusData.grounds_ok);
 
-            if (step === "Water empty") {
-                showSnackbar(texts.waterTankEmpty, "error");
-            }
+        const { current_step: step } = statusData;
 
-            if (step === "Grounds full") {
-                showSnackbar(texts.groundsContainerFull, "error");
-            }
-
-            if (step === "Waiting" && isBrewing) {
-                showSnackbar(texts.coffeeReady.replace('{type}', coffeeType), "success");
-                setIsBrewing(false);
-            }
+        if (step === "Water empty")  showSnackbar(texts.waterTankEmpty, "error");
+        if (step === "Grounds full") showSnackbar(texts.groundsContainerFull, "error");
+        if (step === "Waiting" && isBrewing) {
+            showSnackbar(texts.coffeeReady.replace("{type}", coffeeType), "success");
+            setIsBrewing(false);
         }
     }, [statusData, isBrewing, coffeeType, setIsBrewing, texts]);
 
-    const showSnackbar = (message: string, severity: "success" | "error" | "warning" | "info") => {
+    const showSnackbar = (message: string, severity: SnackbarSeverity) => {
         setSnackbarMessage(message);
         setSnackbarSeverity(severity);
         setSnackbarOpen(true);
     };
 
-    const handleSnackbarClose = () => {
-        setSnackbarOpen(false);
-    };
-
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("🖱️ Zubereitung gestartet:", { coffeeType, amount, strength });
 
-        if (!isOn) {
-            showSnackbar(texts.machineOffError, "error");
-            return;
-        }
-        if (!isReady) {
-            showSnackbar(texts.machineHeating, "warning");
-            return;
-        }
-        if (isBrewing) {
-            showSnackbar(texts.alreadyBrewing, "warning");
-            return;
-        }
-        if (!waterLevelIsGood) {
-            showSnackbar(texts.waterTankEmpty, "error");
-            return;
-        }
-        if (!coffeeGroundsContainerEmpty) {
-            showSnackbar(texts.groundsContainerFull, "error");
-            return;
-        }
+        if (!isOn)                        return showSnackbar(texts.machineOffError, "error");
+        if (!isReady)                     return showSnackbar(texts.machineHeating, "warning");
+        if (isBrewing)                    return showSnackbar(texts.alreadyBrewing, "warning");
+        if (!waterLevelIsGood)            return showSnackbar(texts.waterTankEmpty, "error");
+        if (!coffeeGroundsContainerEmpty) return showSnackbar(texts.groundsContainerFull, "error");
 
         setIsBrewing(true);
-        showSnackbar(texts.brewingStarted.replace('{type}', coffeeType), "info");
+        showSnackbar(texts.brewingStarted.replace("{type}", coffeeType), "info");
 
-        // Command-Format: "Brew"
         send("Brew");
-
+        setTimeout(() => send(amount.toString()), BREW_DELAYS.amount);
         setTimeout(() => {
-            send(amount.toString());
-        }, 50);
-
-        setTimeout(() => {
-            // Backend erwartet "Espresso" oder "Normal" (nicht "1" oder "2")
-            const backendCoffeeType = coffeeType === texts.espresso ? "Espresso" : "Normal";
-            send(backendCoffeeType);
-        }, 100);
-
-        // Kaffees zur History hinzufügen
+            send(coffeeType === texts.espresso ? "Espresso" : "Normal");
+        }, BREW_DELAYS.type);
         setTimeout(() => {
             const now = new Date().toISOString();
             for (let i = 0; i < amount; i++) {
-                addCoffeeToHistory({
-                    id: Date.now() + i,
-                    type: coffeeType,
-                    strength,
-                    createdDate: now,
-                });
+                addCoffeeToHistory({ id: Date.now() + i, type: coffeeType, strength, createdDate: now });
             }
-        }, 200);
+        }, BREW_DELAYS.history);
     };
 
     const handleFillWater = () => {
@@ -133,39 +96,25 @@ const Preparation = () => {
         showSnackbar(texts.groundsEmptied, "success");
     };
 
-    const todaysCoffees = coffeeHistory.filter(coffee => {
-        const coffeeDate = new Date(coffee.createdDate).toDateString();
-        const today = new Date().toDateString();
-        return coffeeDate === today;
-    });
+    const todaysCoffees = coffeeHistory.filter((coffee) => isToday(coffee.createdDate));
 
     return (
         <div className="preparation-container">
             <Snackbar
                 open={snackbarOpen}
                 autoHideDuration={4000}
-                onClose={handleSnackbarClose}
+                onClose={() => setSnackbarOpen(false)}
                 anchorOrigin={{ vertical: "top", horizontal: "center" }}
             >
-                <Alert
-                    onClose={handleSnackbarClose}
-                    severity={snackbarSeverity}
-                    variant="filled"
-                    sx={{ width: "100%" }}
-                >
+                <Alert onClose={() => setSnackbarOpen(false)} severity={snackbarSeverity} variant="filled" sx={{ width: "100%" }}>
                     {snackbarMessage}
                 </Alert>
             </Snackbar>
 
-            <div className="preparation-hero">
-                <div className="hero-content">
-                    <h1 className="hero-title">{texts.preparationTitle}</h1>
-                    <p className="hero-subtitle">{texts.preparationSubtitle}</p>
-                </div>
-            </div>
+            <PageHeader title={texts.preparationTitle} subtitle={texts.preparationSubtitle} />
 
             <div className="preparation-grid">
-                {/* Konfigurations-Karte */}
+                {/* Configuration Card */}
                 <div className="config-card">
                     <div className="card-header">
                         <SettingsIcon style={{ fontSize: 24, color: "#1976d2" }} />
@@ -173,47 +122,34 @@ const Preparation = () => {
                     </div>
 
                     <form onSubmit={handleSubmit} className="config-form">
-                        {/* Kaffeeart */}
+                        {/* Coffee Type */}
                         <div className="form-group">
                             <label className="form-label">
                                 <LocalCafeIcon style={{ fontSize: 20, marginRight: 8 }} />
                                 {texts.coffeeType}
                             </label>
                             <div className="radio-group">
-                                <label className={`radio-card ${coffeeType === texts.espresso ? "active" : ""}`}>
-                                    <input
-                                        type="radio"
-                                        name="coffeeType"
-                                        value={texts.espresso}
-                                        checked={coffeeType === texts.espresso}
-                                        onChange={(e) => setCoffeeType(e.target.value)}
-                                    />
-                                    <div className="radio-content">
-                                        <CoffeeIcon style={{ fontSize: 24 }} />
-                                        <span className="radio-text">{texts.espresso}</span>
-                                    </div>
-                                </label>
-                                <label className={`radio-card ${coffeeType === texts.black ? "active" : ""}`}>
-                                    <input
-                                        type="radio"
-                                        name="coffeeType"
-                                        value={texts.black}
-                                        checked={coffeeType === texts.black}
-                                        onChange={(e) => setCoffeeType(e.target.value)}
-                                    />
-                                    <div className="radio-content">
-                                        <CoffeeIcon style={{ fontSize: 24 }} />
-                                        <span className="radio-text">{texts.black}</span>
-                                    </div>
-                                </label>
+                                {[texts.espresso, texts.black].map((type) => (
+                                    <label key={type} className={`radio-card ${coffeeType === type ? "active" : ""}`}>
+                                        <input
+                                            type="radio"
+                                            name="coffeeType"
+                                            value={type}
+                                            checked={coffeeType === type}
+                                            onChange={(e) => setCoffeeType(e.target.value)}
+                                        />
+                                        <div className="radio-content">
+                                            <CoffeeIcon style={{ fontSize: 24 }} />
+                                            <span className="radio-text">{type}</span>
+                                        </div>
+                                    </label>
+                                ))}
                             </div>
                         </div>
 
-                        {/* Anzahl */}
+                        {/* Amount */}
                         <div className="form-group">
-                            <label className="form-label">
-                                {texts.amount}
-                            </label>
+                            <label className="form-label">{texts.amount}</label>
                             <select
                                 className="form-select-modern"
                                 value={amount}
@@ -224,7 +160,7 @@ const Preparation = () => {
                             </select>
                         </div>
 
-                        {/* Stärke */}
+                        {/* Strength */}
                         <div className="form-group">
                             <label className="form-label">
                                 <BoltIcon style={{ fontSize: 20, marginRight: 8 }} />
@@ -234,21 +170,17 @@ const Preparation = () => {
                                 <input
                                     type="range"
                                     className="strength-slider"
-                                    min="1"
-                                    max="5"
+                                    min="1" max="5"
                                     value={strength}
                                     onChange={(e) => setStrength(Number(e.target.value))}
                                 />
                                 <div className="strength-display">
                                     {[1, 2, 3, 4, 5].map((level) => (
-                                        <div
-                                            key={level}
-                                            className={`strength-bar ${level <= strength ? "active" : ""}`}
-                                        />
+                                        <div key={level} className={`strength-bar ${level <= strength ? "active" : ""}`} />
                                     ))}
                                 </div>
                                 <p className="strength-value">
-                                    {texts.strengthValue.replace('{value}', strength.toString())}
+                                    {texts.strengthValue.replace("{value}", strength.toString())}
                                 </p>
                             </div>
                         </div>
@@ -259,11 +191,10 @@ const Preparation = () => {
                             disabled={isBrewing || !isOn || !isReady}
                         >
                             <span className="button-icon">
-                                {isBrewing ? (
-                                    <AutorenewIcon className="spinner" style={{ fontSize: 24 }} />
-                                ) : (
-                                    <PlayArrowIcon style={{ fontSize: 24 }} />
-                                )}
+                                {isBrewing
+                                    ? <AutorenewIcon className="spinner" style={{ fontSize: 24 }} />
+                                    : <PlayArrowIcon style={{ fontSize: 24 }} />
+                                }
                             </span>
                             <span className="button-text">
                                 {isBrewing ? texts.brewingInProgress : texts.startBrewing}
@@ -272,7 +203,7 @@ const Preparation = () => {
                     </form>
                 </div>
 
-                {/* Wartungs-Karte */}
+                {/* Maintenance Card */}
                 <div className="maintenance-card">
                     <div className="card-header">
                         <BuildIcon style={{ fontSize: 24, color: "#1976d2" }} />
@@ -353,12 +284,12 @@ const Preparation = () => {
                 </div>
             </div>
 
-            {/* Heute gebrühte Kaffees */}
+            {/* Today's Brewed Coffees */}
             <div className="logs-card">
                 <div className="card-header">
                     <HistoryIcon style={{ fontSize: 24, color: "#1976d2" }} />
                     <h2 className="card-title">
-                        {texts.todayBrewedCoffees.replace('{count}', todaysCoffees.length.toString())}
+                        {texts.todayBrewedCoffees.replace("{count}", todaysCoffees.length.toString())}
                     </h2>
                 </div>
                 <div className="logs-content">
@@ -378,25 +309,20 @@ const Preparation = () => {
                                 {todaysCoffees.slice().reverse().map((coffee) => (
                                     <tr key={coffee.id}>
                                         <td>
-                                            {new Date(coffee.createdDate).toLocaleTimeString('de-DE', {
-                                                hour: '2-digit',
-                                                minute: '2-digit',
-                                                second: '2-digit'
+                                            {new Date(coffee.createdDate).toLocaleTimeString("de-DE", {
+                                                hour: "2-digit", minute: "2-digit", second: "2-digit",
                                             })}
                                         </td>
                                         <td>
-                                            <span className={`badge ${coffee.type === texts.espresso ? 'bg-primary' : 'bg-dark'}`}>
-                                                {coffee.type}
-                                            </span>
+                                                <span className={`badge ${coffee.type === texts.espresso ? "bg-primary" : "bg-dark"}`}>
+                                                    {coffee.type}
+                                                </span>
                                         </td>
                                         <td>
                                             <div className="d-flex align-items-center">
                                                 <div className="strength-indicator me-2">
-                                                    {[1, 2, 3, 4, 5].map(level => (
-                                                        <div
-                                                            key={level}
-                                                            className={`strength-dot ${level <= coffee.strength ? 'active' : ''}`}
-                                                        />
+                                                    {[1, 2, 3, 4, 5].map((level) => (
+                                                        <div key={level} className={`strength-dot ${level <= coffee.strength ? "active" : ""}`} />
                                                     ))}
                                                 </div>
                                                 <span>{coffee.strength}/5</span>

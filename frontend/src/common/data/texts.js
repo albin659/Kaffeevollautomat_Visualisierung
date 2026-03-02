@@ -19,6 +19,7 @@ export const texts = {
         brewing: 'Brüht gerade...',
         ready: 'Bereit',
         heating: 'Heizt auf...',
+        resting: 'Ruhezustand',
         turnedOff: 'Ausgeschaltet',
         brewedToday: 'HEUTE GEBRÜHT',
         cups: 'Tassen',
@@ -59,6 +60,7 @@ export const texts = {
             toStartPositionState: 'Zur Startposition',
             waitState: 'Warten',
             coolingDownState: 'Abkühlen',
+            restState: 'Ruhezustand',
         },
         pressCoffee: 'Drücke einen Kaffee',
         strengthText: 'Stärke',
@@ -165,6 +167,7 @@ export const texts = {
         brewing: 'Brewing...',
         ready: 'Ready',
         heating: 'Heating up...',
+        resting: 'Resting',
         turnedOff: 'Turned off',
         brewedToday: 'BREWED TODAY',
         cups: 'Cups',
@@ -204,7 +207,8 @@ export const texts = {
             brewingState: "Brew",              // war: "Brewing"
             toStartPositionState: "ToStartposition", // war: "To Startposition"
             waitState: "Waiting",              // ✓ war schon korrekt
-            coolingDownState: "CoolDown"       // war: "Cooling down"
+            coolingDownState: "CoolDown",       // war: "Cooling down"
+            restState: "Rest",
         },
         pressCoffee: 'Press a Coffee',
         strengthText: 'Strength',
