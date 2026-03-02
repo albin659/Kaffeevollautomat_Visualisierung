@@ -4,6 +4,7 @@ interface IWebSocketContext {
     isOn: boolean;
     isReady: boolean;
     isBrewing: boolean;
+    isResting: boolean;
     logs: string[];
     coffeeHistory: ICoffee[];
     statusData: IStatusData | null;
