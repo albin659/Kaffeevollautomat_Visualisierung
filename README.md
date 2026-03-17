@@ -185,13 +185,117 @@ Jeder Schritt wird zeitverzögert (mit `asyncio.sleep(1)`) simuliert, um den ech
 
 ---
 
+---
+
+## Frontend – Übersicht
+
+Das Frontend (im Ordner `frontend/`) ist eine React-Anwendung mit TypeScript und stellt die Visualisierung der Kaffeemaschine bereit. Es verbindet sich automatisch mit dem WebSocket-Server des Backends und zeigt alle Maschinendaten in Echtzeit an.
+
+### Starten des Frontends:
+```bash
+cd frontend
+npm install
+npm start
+```
+
+Die Anwendung ist danach unter **`http://localhost:3000`** erreichbar.
+
+---
+
+## Verwendete Bibliotheken (Frontend)
+
+| Bibliothek | Zweck |
+|------------|-------|
+| `react` + `react-dom` | UI-Framework |
+| `react-router-dom` | Seitennavigation (Routing) |
+| `typescript` | Typsicherheit |
+| `bootstrap` + `react-bootstrap` | Basis-Styling & Komponenten |
+| `@mui/icons-material` | Icons |
+| `react-icons` | Weitere Icons (z.B. Kaffeesymbol, Temperatur) |
+| `chart.js` + `react-chartjs-2` | Temperaturverlauf-Diagramm |
+| `recharts` | Weitere Diagramme in der Analytics-Ansicht |
+| `react-csv-downloader` | CSV-Export der Kaffee-Historie |
+
+---
+
+## Verbindung zum Backend (WebSocket)
+
+Das Frontend verbindet sich automatisch beim Start mit dem WebSocket-Server:
+```typescript
+const WS_URL = "ws://localhost:8765";
+const ws = new WebSocket(WS_URL);
+```
+
+Die gesamte WebSocket-Logik ist im `WebSocketContext` gekapselt und steht allen Komponenten über einen React-Context zur Verfügung.
+
+### Empfangene Nachrichtentypen:
+
+| Typ | Beschreibung |
+|-----|--------------|
+| `status` | Aktueller Maschinenstatus (Temperatur, Wasserfluss, Schritt etc.) |
+| `history` | Vollständige Kaffee-Historie aus der Datenbank |
+
+### Gesendete Nachrichten (Frontend → Backend):
+
+| Nachricht | Beschreibung |
+|-----------|--------------|
+| `HeatUp` | Maschine einschalten & aufheizen |
+| `CoolDown` | Maschine ausschalten & abkühlen |
+| `History` | Kaffee-Historie beim Start anfragen |
+| `Brew,<Typ>,<Menge>,<Stärke>` | Kaffeebezug starten (z.B. `Brew,Normal,150,3`) |
+
+---
+
+## Seitenübersicht
+
+| Route | Komponente | Beschreibung |
+|-------|------------|--------------|
+| `/dashboard` | `Dashboard.tsx` | Maschinenstatus, Tages- & Gesamtstatistik, Ein-/Ausschalten |
+| `/preparation` | `Preparation.tsx` | Kaffeesorte wählen (Normal/Espresso), Menge & Stärke einstellen und Bezug starten |
+| `/analytic` | `Analytics.tsx` | Echtzeitanzeige von Temperatur, Wasserfluss, Maschinenzustand und Stärke |
+| `/history` | `History.tsx` | Tabelle aller bisherigen Kaffeebezüge mit Datum, Typ und Stärke |
+| `/report` | `Report.tsx` | Export der Kaffee-Historie als CSV-Datei |
+
+---
+
+## Globaler State (WebSocketContext)
+
+Der `WebSocketContext` hält den gesamten Anwendungszustand und stellt ihn allen Komponenten zur Verfügung:
+
+| Variable | Typ | Beschreibung |
+|----------|-----|--------------|
+| `isConnected` | `boolean` | WebSocket-Verbindung aktiv |
+| `isOn` | `boolean` | Maschine eingeschaltet |
+| `isReady` | `boolean` | Maschine auf Betriebstemperatur |
+| `isBrewing` | `boolean` | Kaffeebezug läuft gerade |
+| `isResting` | `boolean` | Maschine kühlt ab / Ruhezustand |
+| `logs` | `string[]` | Rohdaten-Logs vom Backend (für Analytics) |
+| `coffeeHistory` | `CoffeeEntry[]` | Liste aller Kaffeebezüge |
+| `send(msg)` | `function` | Nachricht an das Backend senden |
+
+---
+
+## Mehrsprachigkeit
+
+Die Anwendung unterstützt **Deutsch** und **Englisch**. Die Sprachumschaltung erfolgt über den `LanguageContext`. Alle angezeigten Texte sind in einer zentralen Übersetzungsdatei hinterlegt und werden über `texts.<key>` abgerufen.
+
+Die aktuelle Sprache kann im `MenuBar` umgeschaltet werden (DE/EN-Flagge).
+
+---
+
+
 ## Zusammenfassung
 
 - Das Backend simuliert den **kompletten Kaffeeprozess** (Aufheizen, Brühen, Abkühlen usw.) und fügt die Daten in die Datenbank ein.
 - Die Visualisierung zeigt **Daten aus MongoDB** an.
 - Für die Anbindung sollen **reale Sensordaten in dieselben Collections** geschrieben werden.
 - Der WebSocket-Server (`BackendWithWebSocketAndDatabaseInAndOut.py`) sorgt für die Kommunikation mit dem Frontend.
-
+- Das Frontend ist eine **React + TypeScript** Anwendung und verbindet sich automatisch über WebSockets mit dem Backend.
+- Die Benutzeroberfläche besteht aus fünf Seiten: **Dashboard**, **Preparation**, **Analytics**, **History** und **Report**.
+- Der gesamte Maschinenstatus (Temperatur, Wasserfluss, Zustand etc.) wird **in Echtzeit** im Frontend angezeigt.
+- Kaffeebezüge können direkt über das Frontend ausgelöst werden – Typ, Menge und Stärke sind dabei frei wählbar.
+- Die **Kaffee-Historie** wird in der Datenbank gespeichert und kann im Frontend als **CSV exportiert** werden.
+- Die Anwendung unterstützt **Deutsch und Englisch** und kann jederzeit umgeschaltet werden.
 ---
 
 ## Repository
