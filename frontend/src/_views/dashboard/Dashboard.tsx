@@ -164,7 +164,7 @@ const Dashboard = () => {
                     </div>
                     <p className="info-text">
                         {texts.projectDescription} <strong>Albin Bajrami</strong>,{" "}
-                        <strong>Lirik Dauti</strong> {texts.and} <strong>David Fink</strong> {texts.at} HTBLA Kaindorf.
+                        <strong>Lirik Dauti</strong> {texts.and} <strong>David Fink</strong>
                     </p>
                 </div>
 

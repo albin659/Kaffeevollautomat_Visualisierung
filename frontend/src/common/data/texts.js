@@ -146,7 +146,6 @@ export const texts = {
 
         // Allgemein
         and: 'und',
-        at: 'an der'
     },
     en: {
         // MenuBar
@@ -294,6 +293,5 @@ export const texts = {
 
         // Allgemein
         and: 'and',
-        at: 'at'
     },
 };
