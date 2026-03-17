@@ -56,26 +56,23 @@ Das Projekt dient als Grundlage für die spätere Integration der echten Maschin
 
 - **Datenbankname:** `Kaffeemaschine`
 - **Collections (Tabellen):**
-    - `Aufheizen`
-    - `Abkühlen`
-    - `Anfeuchten`
-    - `Mahlen`
-    - `Pressen`
-    - `Einen_Espresso_Brühen`
-    - `Einen_Normalen_Kaffee_Brühen`
-    - `Zwei_Espresso_Brühen`
-    - `Zwei_Normale_Kaffee_Brühen`
-    - `Zur_Startposition`
+    - `Status`
+    - `CoffeeHistory`
+    - `StatusHistory`
 
 ### Beispiel-Datensatz:
 ```json
 {
-  "_id": { "$oid": "68e2bb808c4e5898c6afd05d" },
-  "step_type": "Anfeuchten",
+  "_id": "69a960d7ac6667b7ceebe8cb",
   "temperature": 94,
   "water_ok": true,
   "grounds_ok": true,
-  "water_flow": 5
+  "cups_since_empty": 0,
+  "cups_since_filled": 0,
+  "water_flow": 0,
+  "powered_on": true,
+  "current_step": "Waiting",
+  "last_updated": 2026-03-05T11:55:26.811+00:00
 }
 ```
 
@@ -87,13 +84,7 @@ Das Backend (siehe `BackendWithWebSocketAndDatabase.py`) stellt die Verbindung z
 
 ### Starten des Servers:
 ```bash
-python .\BackendWithWebSocketAndDatabase.py
-```
-
-Wenn alles korrekt ist, erscheint:
-```
-MongoDB Verbindung erfolgreich
->>> Server läuft auf ws://localhost:8765
+python .\BackendWithWebSocketAndDatabaseInAndOut.py
 ```
 
 ---
@@ -114,18 +105,56 @@ Wenn die echte Maschine später Daten liefert, kann sie **denselben Aufbau** ver
 
 ---
 
-## Wie die Simulation funktioniert
-
-Die Klasse `MachineState` speichert den aktuellen Zustand der Kaffeemaschine (Temperatur, Wasserstand, Kaffeesatz usw.).  
-Die Simulation läuft anhand von Prozess-Schritten, die jeweils Daten aus der MongoDB auslesen.
+## Funktionsübersicht
 
 | Funktion | Beschreibung |
 |-----------|--------------|
-| `get_heating_data()` | Lädt Temperaturdaten zum Aufheizen |
-| `get_cooling_data()` | Lädt Daten zum Abkühlen |
-| `get_coffee_step_data(step, type, amount)` | Holt die Daten eines Prozess-Schritts (z. B. Brühen, Mahlen) |
-| `make_coffee_from_db()` | Führt den gesamten Brühvorgang mit allen Schritten aus |
-| `cool_down_machine_from_db()` | Kühlt die Maschine automatisch ab |
+| Werte aus der Datenbank auslesen |
+| `get_current_status()` | Liest den aktuellen Maschinenstatus aus der MongoDB-Datenbank aus und konvertiert `_id` und `last_updated` in lesbare Formate |
+| `get_coffee_history()` | Lädt die gesamte Kaffee-Historie aus der Datenbank und konvertiert MongoDB-spezifische Felder |
+| Statuswerte verändern |
+| `update_step()` | Aktualisiert den aktuellen Schritt der Maschine (z.B. "HeatUp", "Brew") inklusive Wasserfluss und anderen Werten |
+| Datenbankwerte aktualisieren |
+| `update_status_in_db()` | Speichert den aktuellen Status in der Haupt-Collection und fügt automatisch einen Zeitstempel hinzu |
+| `save_status_to_history()` | Archiviert den Status in der Verlaufs-Collection für spätere Analysen |
+| `save_coffee_to_history()` | Speichert einen Kaffeebezug in der Historie (wird vom Frontend gesendet) |
+| Konvertieren |
+| `status_to_json()` | Konvertiert den Maschinenstatus in ein JSON-Format für WebSocket-Übertragungen |
+| WebSocket Nachrichten senden |
+| `broadcast_status()` | Sendet den aktuellen Status an alle verbundenen WebSocket-Clients |
+| `send_current_status()` | Sendet den Status nur an einen bestimmten WebSocket-Client (bei Verbindungsaufbau) |
+| `send_coffee_history_to_all()` | Sendet die gesamte Kaffee-Historie an alle verbundenen Clients |
+| Hintergrundfunktionen |
+| `continuous_waiting_broadcast()` | Hintergrund-Task, der jede Sekunde den Status broadcastet, wenn die Maschine im "Waiting"-Zustand ist |
+| `check_auto_standby()` | Hintergrund-Task, der alle 10 Sekunden prüft, ob die Maschine nach 2 Minuten Inaktivität automatisch abkühlen soll |
+| Simulations Funktionen vorbereiten und aufräumen |
+| `prepare_machine_task()` | Bereitet die Maschine auf eine Simulation vor: markiert sie als "processing" und speichert den aktuellen Task |
+| `cleanup_machine_task()` | Räumt nach einer Simulation auf: setzt "processing" zurück und löscht den Task |
+| Simulationen |
+| `simulate_heating()` | Simuliert das Aufheizen der Maschine von Raumtemperatur (22°C) auf 94°C in 45 Sekunden |
+| `simulate_cooling()` | Simuliert das Abkühlen der Maschine von 94°C auf 22°C in 180 Sekunden |
+| `simulate_coffee_brewing()` | Simuliert den gesamten Kaffeezubereitungsprozess (Mahlen, Pressen, Brühen etc.) basierend auf Kaffee-Typ und Menge |
+| Initialswerte setzen |
+| `initialize_status_once()` | Erstellt den initialen Maschinenstatus in der Datenbank beim Programmstart |
+| Hauptfunktionen|
+| `handler()` | WebSocket-Hauptfunktion: verarbeitet eingehende Nachrichten vom Frontend (Brew, HeatUp, etc.) |
+| `main()` | Hauptfunktion: verbindet mit MongoDB, startet Hintergrund-Tasks und den WebSocket-Server |
+
+## Globale Variablen
+
+| Variable | Beschreibung |
+|----------|--------------|
+| `connected_clients` | Set mit allen aktiven WebSocket-Verbindungen |
+| `machine_state` | Dictionary mit aktuellem Zustand: `input_state` (ready/await_amount/await_coffee_choice), `current_amount`, `is_processing`, `last_activity`, `current_task` |
+| `coffee_types` | Dictionary mit Konfigurationen für verschiedene Kaffeesorten (Normal, Espresso) mit Schritt-Dauern |
+
+## Datenbank-Collections
+
+| Collection | Zweck |
+|------------|-------|
+| `Status` | Aktueller Maschinenstatus (nur 1 Eintrag) |
+| `CoffeeHistory` | Historie aller getrunkenen Kaffees |
+| `StatusHistory` | Archivierte Status-Updates |
 
 Jeder Schritt wird zeitverzögert (mit `asyncio.sleep(1)`) simuliert, um den echten Ablauf nachzuahmen.
 
@@ -138,42 +167,30 @@ Jeder Schritt wird zeitverzögert (mit `asyncio.sleep(1)`) simuliert, um den ech
 - Die Visualisierung (Frontend) verbindet sich mit diesem Server.
 - Gesendete Nachrichten enthalten den aktuellen Zustand in folgendem Format:
 
-```
-<Schritt>,<Temperatur>,<Wasser OK>,<Kaffeesatz OK>,<Wasserfluss>,<Datum>
-```
-
 ### Beispiel:
 ```
-Aufheizen,90,1,1,0,12.11.2025
-Brühen,94,1,1,5,12.11.2025
-Warten,94,1,1,0,12.11.2025
+"type": "status",
+"data": {
+  "temperature": 22,
+  "water_ok": True,
+  "grounds_ok": True,
+  "water_flow": 0,
+  "current_step": "Waiting",
+  "powered_on": False,
+  "cups_since_empty": 0,
+  "cups_since_filled": 0,
+  "last_updated": datetime.now().isoformat()
+}
 ```
 
 ---
 
-## Datenverwaltung in MongoDB
-
-- **Alle Testdaten löschen:**
-  ```python
-  db["Aufheizen"].delete_many({})
-  ```
-
-- **Neue Schritte hinzufügen:**  
-  Eine neue Collection anlegen (z. B. `Reinigen`) und entsprechende Daten einfügen.
-
-- **Alle Daten prüfen:**
-  ```python
-  for doc in db["Aufheizen"].find():
-      print(doc)
-  ```
-
-
 ## Zusammenfassung
 
+- Das Backend simuliert den **kompletten Kaffeeprozess** (Aufheizen, Brühen, Abkühlen usw.) und fügt die Daten in die Datenbank ein.
 - Die Visualisierung zeigt **Daten aus MongoDB** an.
-- Das Backend simuliert den **kompletten Kaffeeprozess** (Aufheizen, Brühen, Abkühlen usw.).
 - Für die Anbindung sollen **reale Sensordaten in dieselben Collections** geschrieben werden.
-- Der WebSocket-Server (`BackendWithWebSocketAndDatabase.py`) sorgt für die Kommunikation mit dem Frontend.
+- Der WebSocket-Server (`BackendWithWebSocketAndDatabaseInAndOut.py`) sorgt für die Kommunikation mit dem Frontend.
 
 ---
 
