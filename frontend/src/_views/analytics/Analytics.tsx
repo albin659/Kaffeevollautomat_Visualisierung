@@ -72,7 +72,7 @@ const Analytics = () => {
             const [zustand, temp, wasser, kaffeesatz, durchfluss] = parts;
             const newState = translate(zustand.trim());
 
-            // When state changes, reset strength for certain states
+            // Stärke status zurücksetzen
             if (
                 (newState === texts.state.waitState) ||
                 (newState === texts.state.coolingDownState) ||
@@ -113,7 +113,7 @@ const Analytics = () => {
                 return next;
             });
         }
-    }, [logs, texts, translate, language]); // jetzt mit language
+    }, [logs, texts, translate, language]);
 
     const allStates = [
         texts.state.heatingState,
